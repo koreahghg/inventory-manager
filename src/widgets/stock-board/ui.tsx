@@ -7,7 +7,7 @@ import { safely } from "@/shared/lib/safe";
 import { formatQuantity } from "@/shared/lib/format";
 import { listStockBoard } from "@/entities/purchase/api";
 import { STOCK_STATUS_LABELS, type StockStatus } from "@/entities/purchase/model";
-import { StockStatusSelect } from "@/features/purchase/update-stock-status/ui";
+import { GroupedStockStatusSelect } from "@/features/purchase/update-stock-status/ui";
 
 const COLUMNS: StockStatus[] = ["online", "in_transit", "in_hand"];
 
@@ -49,7 +49,7 @@ export async function StockBoard() {
               <div className="flex flex-col gap-2">
                 {columnItems.map((item) => (
                   <Card
-                    key={item.purchase_id}
+                    key={`${item.product_id}:${item.stock_status}`}
                     className="flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
@@ -65,7 +65,12 @@ export async function StockBoard() {
                         {formatQuantity(item.remaining_quantity)}
                       </p>
                     </div>
-                    <StockStatusSelect purchaseId={item.purchase_id} status={item.stock_status} remainingQuantity={item.remaining_quantity} />
+                    <GroupedStockStatusSelect
+                      productId={item.product_id}
+                      status={item.stock_status}
+                      remainingQuantity={item.remaining_quantity}
+                      batches={item.batches}
+                    />
                   </Card>
                 ))}
               </div>

@@ -4,11 +4,13 @@ import {
   Children,
   isValidElement,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type OptionHTMLAttributes,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { CONTROL_SIZE_CLASSES, type ControlSize } from "./size";
 
 /**
@@ -65,16 +67,48 @@ export function Select({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const options = extractOptions(children);
   const stringValue = String(value);
   const selected = options.find((option) => option.value === stringValue);
+
+  // 테이블처럼 overflow-x-auto가 걸린 조상 안에 있으면(그 경우 overflow-y도
+  // 자동으로 auto가 돼서 잘려 보인다), 드롭다운을 body로 포털링해서 어떤
+  // 조상의 overflow에도 잘리지 않게 한다. 위치는 트리거 버튼 기준으로 직접
+  // 계산해서 fixed로 붙인다.
+  useLayoutEffect(() => {
+    if (!open || !containerRef.current) return;
+
+    function updatePosition() {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuRect({ top: rect.bottom + 8, left: rect.left, width: rect.width });
+    }
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
     function handlePointerDown(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     }
@@ -128,31 +162,36 @@ export function Select({
         </svg>
       </button>
 
-      {open && (
-        <ul
-          role="listbox"
-          className="animate-menu-in absolute z-30 mt-2 max-h-80 w-full origin-top overflow-auto rounded-lg border border-grey-200 bg-white p-1.5 shadow-[0_4px_12px_oklch(0.155_0.060_261_/_0.06),0_1px_2px_oklch(0.155_0.060_261_/_0.04)]"
-        >
-          {options.map((option, index) => (
-            <li key={option.value} className={index > 0 ? "mt-1" : undefined}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={option.value === stringValue}
-                disabled={option.disabled}
-                onClick={() => selectOption(option.value)}
-                className={`block w-full rounded-m px-4 py-3 text-left text-body-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                  option.value === stringValue
-                    ? "bg-brand text-white"
-                    : "text-grey-800 hover:bg-grey-100 active:bg-grey-150"
-                }`}
-              >
-                {option.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {open &&
+        menuRect &&
+        createPortal(
+          <ul
+            ref={menuRef}
+            role="listbox"
+            style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
+            className="animate-menu-in fixed z-30 max-h-80 origin-top overflow-auto rounded-lg border border-grey-200 bg-white p-1.5 shadow-[0_4px_12px_oklch(0.155_0.060_261_/_0.06),0_1px_2px_oklch(0.155_0.060_261_/_0.04)]"
+          >
+            {options.map((option, index) => (
+              <li key={option.value} className={index > 0 ? "mt-1" : undefined}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === stringValue}
+                  disabled={option.disabled}
+                  onClick={() => selectOption(option.value)}
+                  className={`block w-full rounded-m px-4 py-3 text-left text-body-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    option.value === stringValue
+                      ? "bg-brand text-white"
+                      : "text-grey-800 hover:bg-grey-100 active:bg-grey-150"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 }

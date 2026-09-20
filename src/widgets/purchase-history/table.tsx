@@ -11,6 +11,42 @@ import type { Purchase } from "@/entities/purchase/model";
 import { updateVendor } from "@/features/purchase/update-vendor/actions";
 import { DeletePurchaseControl } from "@/features/purchase/delete-purchase/ui";
 
+type PurchaseGroup = {
+  key: string;
+  purchase_date: string;
+  unit_price: number;
+  vendor: string | null;
+  memo: string | null;
+  quantity: number;
+  ids: string[];
+};
+
+/** 같은 매입일·단가·매입처·메모를 가진 행을 하나로 합친다 — 재고 상태를
+ * 옮기면서 원래 하나였던 매입이 여러 행으로 쪼개진 경우, 매입 이력에서는
+ * 다시 하나처럼 보여준다. */
+function groupPurchases(purchases: Purchase[]): PurchaseGroup[] {
+  const groups = new Map<string, PurchaseGroup>();
+  for (const p of purchases) {
+    const key = `${p.purchase_date}|${p.unit_price}|${p.vendor ?? ""}|${p.memo ?? ""}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.quantity += p.quantity;
+      existing.ids.push(p.id);
+      continue;
+    }
+    groups.set(key, {
+      key,
+      purchase_date: p.purchase_date,
+      unit_price: p.unit_price,
+      vendor: p.vendor,
+      memo: p.memo,
+      quantity: p.quantity,
+      ids: [p.id],
+    });
+  }
+  return Array.from(groups.values());
+}
+
 export function PurchaseHistoryTable({
   productId,
   purchases,
@@ -24,22 +60,30 @@ export function PurchaseHistoryTable({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const dirtyIds = useMemo(
+  const groups = useMemo(() => groupPurchases(purchases), [purchases]);
+
+  const dirtyKeys = useMemo(
     () =>
-      Object.keys(edits).filter((id) => {
-        const original = purchases.find((p) => p.id === id)?.vendor ?? "";
-        return edits[id] !== original;
+      Object.keys(edits).filter((key) => {
+        const original = groups.find((g) => g.key === key)?.vendor ?? "";
+        return edits[key] !== original;
       }),
-    [edits, purchases],
+    [edits, groups],
   );
 
-  const isDirty = dirtyIds.length > 0;
+  const isDirty = dirtyKeys.length > 0;
 
   const save = () => {
     setError(null);
     startTransition(async () => {
       try {
-        await Promise.all(dirtyIds.map((id) => updateVendor(productId, id, edits[id])));
+        await Promise.all(
+          dirtyKeys.flatMap((key) => {
+            const group = groups.find((g) => g.key === key);
+            if (!group) return [];
+            return group.ids.map((id) => updateVendor(productId, id, edits[key]));
+          }),
+        );
         router.refresh();
         setConfirmOpen(false);
         setEdits({});
@@ -73,25 +117,25 @@ export function PurchaseHistoryTable({
           </Tr>
         </Thead>
         <Tbody>
-          {purchases.map((purchase) => (
-            <Tr key={purchase.id}>
-              <Td>{formatDate(purchase.purchase_date)}</Td>
-              <Td>{purchase.quantity}</Td>
-              <Td>{formatCurrency(purchase.unit_price)}</Td>
-              <Td>{formatCurrency(purchase.quantity * purchase.unit_price)}</Td>
+          {groups.map((group) => (
+            <Tr key={group.key}>
+              <Td>{formatDate(group.purchase_date)}</Td>
+              <Td>{group.quantity}</Td>
+              <Td>{formatCurrency(group.unit_price)}</Td>
+              <Td>{formatCurrency(group.quantity * group.unit_price)}</Td>
               <Td>
                 <Input
                   size="s"
                   placeholder="매입처"
-                  value={edits[purchase.id] ?? purchase.vendor ?? ""}
+                  value={edits[group.key] ?? group.vendor ?? ""}
                   onChange={(e) =>
-                    setEdits((prev) => ({ ...prev, [purchase.id]: e.target.value }))
+                    setEdits((prev) => ({ ...prev, [group.key]: e.target.value }))
                   }
                 />
               </Td>
-              <Td>{purchase.memo ?? "-"}</Td>
+              <Td>{group.memo ?? "-"}</Td>
               <Td>
-                <DeletePurchaseControl purchaseId={purchase.id} />
+                <DeletePurchaseControl purchaseIds={group.ids} />
               </Td>
             </Tr>
           ))}

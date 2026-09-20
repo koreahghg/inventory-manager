@@ -7,18 +7,20 @@ import type {
   AvailablePurchaseBatch,
   Purchase,
   StockBoardItem,
+  StockGroup,
   StockStatus,
 } from "./model";
 
-/** Purchase batches that still have remaining stock — the single 재고관리
- * page table (상태 변경/판매 등록/삭제를 여기서 전부 처리). Full history
- * (sold-out batches included) lives on the 기록 page instead. */
-export const listActivePurchases = cache(async function listActivePurchases(
+/** Purchase batches that still have remaining stock, grouped by (product,
+ * stock_status) — the 재고관리 page table. 같은 상품·같은 상태의 배치는
+ * 한 행으로 합쳐지고, 배치가 여러 개면 펼쳐서 개별 매입처/단가를 볼 수
+ * 있다. Full history (sold-out batches included) lives on the 기록 page
+ * instead. */
+export const listActiveStock = cache(async function listActiveStock(
   page = 1,
   q?: string,
-): Promise<Paginated<ActivePurchase>> {
+): Promise<Paginated<StockGroup>> {
   const supabase = await createClient();
-  const [from, to] = rangeFor(page, PAGE_SIZE);
 
   let matchingProductIds: string[] | null = null;
   const term = q?.trim().replace(/[%,]/g, "");
@@ -40,7 +42,6 @@ export const listActivePurchases = cache(async function listActivePurchases(
     .from("v_purchase_stock")
     .select(
       "purchase_id, product_id, purchase_date, vendor, stock_status, purchased_quantity, remaining_quantity, unit_price",
-      { count: "exact" },
     )
     .gt("remaining_quantity", 0);
 
@@ -48,9 +49,7 @@ export const listActivePurchases = cache(async function listActivePurchases(
     query = query.in("product_id", matchingProductIds);
   }
 
-  const { data, error, count } = await query
-    .order("purchase_date", { ascending: false })
-    .range(from, to);
+  const { data, error } = await query.order("purchase_date", { ascending: false });
 
   if (error) throw error;
 
@@ -80,15 +79,45 @@ export const listActivePurchases = cache(async function listActivePurchases(
     }
   }
 
-  const rows: ActivePurchase[] = (data ?? []).map((row) => ({
-    ...row,
-    stock_status: row.stock_status as StockStatus,
-    product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
-    product_brand: productById.get(row.product_id)?.brand ?? null,
-    product_image_url: imageByProductId.get(row.product_id) ?? null,
-  }));
+  const groups = new Map<string, StockGroup>();
+  for (const row of data ?? []) {
+    const key = `${row.product_id}:${row.stock_status}`;
+    const batch: ActivePurchase = {
+      ...row,
+      stock_status: row.stock_status as StockStatus,
+      product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
+      product_brand: productById.get(row.product_id)?.brand ?? null,
+      product_image_url: imageByProductId.get(row.product_id) ?? null,
+    };
 
-  return paginate(rows, page, count ?? 0, PAGE_SIZE);
+    const existing = groups.get(key);
+    if (existing) {
+      existing.remaining_quantity += row.remaining_quantity;
+      existing.batches.push(batch);
+      continue;
+    }
+
+    groups.set(key, {
+      product_id: row.product_id,
+      stock_status: batch.stock_status,
+      product_name: batch.product_name,
+      product_brand: batch.product_brand,
+      product_image_url: batch.product_image_url,
+      remaining_quantity: row.remaining_quantity,
+      batches: [batch],
+    });
+  }
+
+  // 그룹 안 batches는 이미 최신순(fetch 순서)으로 쌓였다. 그룹 자체도
+  // 가장 최근 매입일(batches[0]) 기준 최신순으로 정렬한다.
+  const allGroups = Array.from(groups.values()).sort((a, b) =>
+    (b.batches[0]?.purchase_date ?? "").localeCompare(a.batches[0]?.purchase_date ?? ""),
+  );
+
+  const [from, to] = rangeFor(page, PAGE_SIZE);
+  const pageRows = allGroups.slice(from, to + 1);
+
+  return paginate(pageRows, page, allGroups.length, PAGE_SIZE);
 });
 
 export const listPurchasesByProduct = cache(async function listPurchasesByProduct(
@@ -138,7 +167,9 @@ export const listAllAvailablePurchaseBatches = cache(
   },
 );
 
-/** Every batch with remaining stock, grouped by stock_status on the home board. */
+/** Every batch with remaining stock, grouped by (product, stock_status) on
+ * the home board — 여러 매입 배치가 같은 상품·같은 상태에 있으면 카드
+ * 하나로 합쳐서 보여준다. batches는 FIFO(오래된 매입분부터) 순으로 담는다. */
 export const listStockBoard = cache(async function listStockBoard(): Promise<
   StockBoardItem[]
 > {
@@ -150,7 +181,7 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
         .from("v_purchase_stock")
         .select("purchase_id, product_id, purchase_date, stock_status, remaining_quantity")
         .gt("remaining_quantity", 0)
-        .order("purchase_date", { ascending: false }),
+        .order("purchase_date", { ascending: true }),
       supabase.from("products").select("id, name, brand, size, color"),
     ]);
 
@@ -160,18 +191,37 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
   type ProductRow = { id: string; name: string; brand: string | null; size: string | null; color: string | null };
   const productById = new Map((products ?? []).map((p) => [p.id, p as ProductRow]));
 
-  return (stockRows ?? []).map((row) => {
-    const product = productById.get(row.product_id);
-    return {
+  const groups = new Map<string, StockBoardItem>();
+  for (const row of stockRows ?? []) {
+    const key = `${row.product_id}:${row.stock_status}`;
+    const batch = {
       purchase_id: row.purchase_id,
+      remaining_quantity: row.remaining_quantity,
+      purchase_date: row.purchase_date,
+    };
+
+    const existing = groups.get(key);
+    if (existing) {
+      existing.remaining_quantity += row.remaining_quantity;
+      existing.batches.push(batch);
+      continue;
+    }
+
+    const product = productById.get(row.product_id);
+    groups.set(key, {
       product_id: row.product_id,
       product_name: product?.name ?? "알 수 없음",
       brand: product?.brand ?? null,
       size: product?.size ?? null,
       color: product?.color ?? null,
-      purchase_date: row.purchase_date,
-      remaining_quantity: row.remaining_quantity,
       stock_status: row.stock_status as StockStatus,
-    };
-  });
+      remaining_quantity: row.remaining_quantity,
+      oldest_purchase_date: row.purchase_date,
+      batches: [batch],
+    });
+  }
+
+  return Array.from(groups.values()).sort((a, b) =>
+    a.oldest_purchase_date < b.oldest_purchase_date ? 1 : -1,
+  );
 });

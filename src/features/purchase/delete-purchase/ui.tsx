@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/Button";
 import { Modal } from "@/shared/ui/Modal";
 import { deletePurchase } from "./actions";
 
-export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
+export function DeletePurchaseControl({ purchaseIds }: { purchaseIds: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +16,8 @@ export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
     setOpen(false);
     setError(null);
   };
+
+  const multi = purchaseIds.length > 1;
 
   return (
     <>
@@ -31,7 +33,9 @@ export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
         <Modal onClose={close}>
           <h2 className="mb-2 text-title-1 font-bold text-grey-900">매입 기록 삭제</h2>
           <p className="mb-6 text-body-2 text-grey-600">
-            이 매입 기록을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.
+            {multi
+              ? `이 매입 기록(${purchaseIds.length}건)을 모두 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.`
+              : "이 매입 기록을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다."}
           </p>
           {error && <p className="mb-4 text-body-2 text-danger">{error}</p>}
           <div className="flex gap-2">
@@ -48,7 +52,7 @@ export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
                 setError(null);
                 startTransition(async () => {
                   try {
-                    await deletePurchase(purchaseId);
+                    await Promise.all(purchaseIds.map((id) => deletePurchase(id)));
                     router.refresh();
                     close();
                   } catch (e) {

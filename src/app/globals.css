@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* Self-hosted (public/fonts/) — copied from the `pretendard` npm package. */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+}
+
+/*
+ * Design tokens adapted from DESIGN.md (Toss Design System reference).
+ * Only the visual language is borrowed — flat cool-grey neutrals, a single
+ * blue accent reserved for the primary action, an aggressive rounding
+ * ladder, and hairline borders. Mobile-only components (bottom-sheet,
+ * tab-bar, keypad, bottom-cta) are not part of this desktop admin app and
+ * are intentionally not implemented.
+ */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Brand */
+  --color-brand: oklch(0.624 0.176 254);
+  --color-brand-hover: oklch(0.522 0.176 257);
+  --color-brand-weak: oklch(0.965 0.020 250);
+
+  /* Greyscale (cool-blue tinted neutrals) */
+  --color-grey-900: oklch(0.234 0.030 254);
+  --color-grey-800: oklch(0.342 0.030 253);
+  --color-grey-700: oklch(0.452 0.028 253);
+  --color-grey-600: oklch(0.555 0.022 253);
+  --color-grey-500: oklch(0.652 0.020 252);
+  --color-grey-400: oklch(0.752 0.016 251);
+  --color-grey-300: oklch(0.840 0.012 248);
+  --color-grey-200: oklch(0.913 0.008 247);
+  --color-grey-150: oklch(0.918 0.007 247);
+  --color-grey-100: oklch(0.957 0.005 247);
+  --color-grey-50: oklch(0.978 0.003 247);
+
+  /* Semantic */
+  --color-danger: oklch(0.628 0.218 22);
+  --color-danger-weak: oklch(0.940 0.040 18);
+  --color-success: oklch(0.493 0.143 154);
+  --color-success-weak: oklch(0.940 0.070 154);
+  --color-warning: oklch(0.748 0.183 56);
+  --color-warning-weak: oklch(0.960 0.060 70);
+
+  /*
+   * Rounding ladder. Named to avoid Tailwind's reserved directional radius
+   * suffixes (rounded-l = left corners only, rounded-s = logical start
+   * side, etc.) — using those as custom key names silently generates a
+   * SECOND, conflicting `.rounded-*` rule instead of the intended one.
+   */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-m: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+
+  /* Type ramp */
+  --text-h1: 28px;
+  --text-h1--line-height: 1.3;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: 24px;
+  --text-h2--line-height: 1.3;
+  --text-h2--letter-spacing: -0.02em;
+  --text-title-1: 18px;
+  --text-title-1--line-height: 1.45;
+  --text-title-1--letter-spacing: -0.01em;
+  --text-title-2: 17px;
+  --text-title-2--line-height: 1.45;
+  --text-title-2--letter-spacing: -0.01em;
+  --text-body-1: 17px;
+  --text-body-1--line-height: 1.5;
+  --text-body-1--letter-spacing: -0.005em;
+  --text-body-2: 15px;
+  --text-body-2--line-height: 1.5;
+  --text-body-2--letter-spacing: -0.005em;
+  --text-body-3: 13px;
+  --text-body-3--line-height: 1.5;
+  --text-label-l: 17px;
+  --text-label-l--line-height: 1.25;
+  --text-label-m: 15px;
+  --text-label-m--line-height: 1.25;
+  --text-label-s: 13px;
+  --text-label-s--line-height: 1.25;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+
+  /*
+   * Motion — from DESIGN.md: ease (default ease-out-expo), ease-out
+   * (snappier, sheet entry), 120/200/320ms only. No bounce overshoot, no
+   * fade beyond 320ms.
+   */
+  --ease-toss: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-toss-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 120ms;
+
+  --animate-toast-in: toast-in 320ms var(--ease-toss-out);
+  --animate-toast-out: toast-out 200ms var(--ease-toss) forwards;
+  /* "trigger 위치에 즉시 펼쳐지는" (menu) — button-press-speed reveal, no bounce. */
+  --animate-menu-in: menu-in 120ms var(--ease-toss-out);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-grey-50);
+  color: var(--color-grey-900);
+}

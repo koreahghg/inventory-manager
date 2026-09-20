@@ -3,43 +3,54 @@ import { createClient } from "@/shared/lib/supabase/server";
 import { PAGE_SIZE } from "@/shared/config/pagination";
 import { paginate, rangeFor, type Paginated } from "@/shared/lib/pagination";
 import type {
+  ActivePurchase,
   AvailablePurchaseBatch,
   Purchase,
-  PurchaseWithProduct,
   StockBoardItem,
   StockStatus,
 } from "./model";
 
-export const listPurchases = cache(async function listPurchases(
+/** Purchase batches that still have remaining stock — the actionable subset
+ * for the 재고관리 page. Full history (sold-out batches included) lives on
+ * the 기록 page instead. */
+export const listActivePurchases = cache(async function listActivePurchases(
   page = 1,
-): Promise<Paginated<PurchaseWithProduct>> {
+): Promise<Paginated<ActivePurchase>> {
   const supabase = await createClient();
   const [from, to] = rangeFor(page, PAGE_SIZE);
-  const [{ data, error, count }, { data: stockRows, error: stockError }] = await Promise.all([
-    supabase
-      .from("purchases")
-      .select("*, product:products(name, brand, style_code, size, color)", {
-        count: "exact",
-      })
-      .order("purchase_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .range(from, to),
-    supabase.from("v_purchase_stock").select("purchase_id, remaining_quantity"),
-  ]);
+  const { data, error, count } = await supabase
+    .from("v_purchase_stock")
+    .select(
+      "purchase_id, product_id, purchase_date, vendor, stock_status, purchased_quantity, remaining_quantity, unit_price",
+      { count: "exact" },
+    )
+    .gt("remaining_quantity", 0)
+    .order("purchase_date", { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  if (stockError) throw stockError;
 
-  const remainingByPurchaseId = new Map(
-    (stockRows ?? []).map((row) => [row.purchase_id, row.remaining_quantity as number]),
-  );
+  const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
+  const productById = new Map<string, { name: string; brand: string | null }>();
 
-  const rows = ((data ?? []) as unknown as Omit<PurchaseWithProduct, "remaining_quantity">[]).map(
-    (row) => ({
-      ...row,
-      remaining_quantity: remainingByPurchaseId.get(row.id) ?? 0,
-    }),
-  );
+  if (productIds.length > 0) {
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, brand")
+      .in("id", productIds);
+
+    if (productsError) throw productsError;
+    for (const product of products ?? []) {
+      productById.set(product.id, { name: product.name, brand: product.brand });
+    }
+  }
+
+  const rows: ActivePurchase[] = (data ?? []).map((row) => ({
+    ...row,
+    stock_status: row.stock_status as StockStatus,
+    product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
+    product_brand: productById.get(row.product_id)?.brand ?? null,
+  }));
 
   return paginate(rows, page, count ?? 0, PAGE_SIZE);
 });

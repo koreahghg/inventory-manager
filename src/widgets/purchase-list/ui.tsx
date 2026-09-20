@@ -1,21 +1,20 @@
 import Link from "next/link";
 import { Table, Thead, Tbody, Tr, Th, Td } from "@/shared/ui/Table";
-import { Badge } from "@/shared/ui/Badge";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Alert } from "@/shared/ui/Alert";
 import { Pagination } from "@/shared/ui/Pagination";
 import { formatCurrency, formatDate, formatQuantity } from "@/shared/lib/format";
 import { safely } from "@/shared/lib/safe";
-import { listPurchases } from "@/entities/purchase/api";
+import { listActivePurchases } from "@/entities/purchase/api";
 import { StockStatusSelect } from "@/features/purchase/update-stock-status/ui";
 import { DeletePurchaseControl } from "@/features/purchase/delete-purchase/ui";
 
 export function preload(page: number) {
-  void listPurchases(page);
+  void listActivePurchases(page);
 }
 
 export async function PurchaseList({ page }: { page: number }) {
-  const result = await safely(() => listPurchases(page));
+  const result = await safely(() => listActivePurchases(page));
 
   if (!result.ok) {
     return (
@@ -26,7 +25,7 @@ export async function PurchaseList({ page }: { page: number }) {
   const { rows: purchases, totalPages } = result.data;
 
   if (purchases.length === 0) {
-    return <EmptyState message="매입 기록이 없습니다." />;
+    return <EmptyState message="재고가 남은 매입 건이 없습니다." />;
   }
 
   return (
@@ -47,32 +46,28 @@ export async function PurchaseList({ page }: { page: number }) {
         </Thead>
         <Tbody>
           {purchases.map((purchase) => (
-            <Tr key={purchase.id}>
+            <Tr key={purchase.purchase_id}>
               <Td>{formatDate(purchase.purchase_date)}</Td>
               <Td>
                 <Link href={`/products/${purchase.product_id}`} className="hover:underline">
-                  {purchase.product?.brand ? `${purchase.product.brand} · ` : ""}
-                  {purchase.product?.name ?? "알 수 없음"}
+                  {purchase.product_brand ? `${purchase.product_brand} · ` : ""}
+                  {purchase.product_name}
                 </Link>
               </Td>
-              <Td>{purchase.quantity}</Td>
+              <Td>{purchase.purchased_quantity}</Td>
               <Td>{formatQuantity(purchase.remaining_quantity)}</Td>
               <Td>{formatCurrency(purchase.unit_price)}</Td>
-              <Td>{formatCurrency(purchase.quantity * purchase.unit_price)}</Td>
+              <Td>{formatCurrency(purchase.purchased_quantity * purchase.unit_price)}</Td>
               <Td>{purchase.vendor ?? "-"}</Td>
               <Td>
-                {purchase.remaining_quantity > 0 ? (
-                  <StockStatusSelect
-                    purchaseId={purchase.id}
-                    status={purchase.stock_status}
-                    remainingQuantity={purchase.remaining_quantity}
-                  />
-                ) : (
-                  <Badge tone="gray">판매 완료</Badge>
-                )}
+                <StockStatusSelect
+                  purchaseId={purchase.purchase_id}
+                  status={purchase.stock_status}
+                  remainingQuantity={purchase.remaining_quantity}
+                />
               </Td>
               <Td>
-                <DeletePurchaseControl purchaseId={purchase.id} />
+                <DeletePurchaseControl purchaseId={purchase.purchase_id} />
               </Td>
             </Tr>
           ))}

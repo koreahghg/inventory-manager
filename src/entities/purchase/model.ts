@@ -18,15 +18,19 @@ export type Purchase = {
   created_at: string;
 };
 
-export type PurchaseWithProduct = Purchase & {
-  product: {
-    name: string;
-    brand: string | null;
-    style_code: string | null;
-    size: string | null;
-    color: string | null;
-  } | null;
+/** A purchase batch that still has remaining stock — the actionable subset
+ * shown on the 재고관리 page (전체 이력은 기록 페이지에서 확인). */
+export type ActivePurchase = {
+  purchase_id: string;
+  product_id: string;
+  product_name: string;
+  product_brand: string | null;
+  purchase_date: string;
+  vendor: string | null;
+  stock_status: StockStatus;
+  purchased_quantity: number;
   remaining_quantity: number;
+  unit_price: number;
 };
 
 export type AvailablePurchaseBatch = {

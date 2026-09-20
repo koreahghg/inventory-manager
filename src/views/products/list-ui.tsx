@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { Button } from "@/shared/ui/Button";
 import { TableSkeleton } from "@/shared/ui/Skeleton";
 import { safely } from "@/shared/lib/safe";
 import { ProductList, preload as preloadProductList } from "@/widgets/product-list/ui";
@@ -43,14 +42,9 @@ export async function ProductsPage({
           title="재고 관리"
           description="등록된 상품과 현재 재고 현황입니다."
           action={
-            <div className="flex items-center gap-2">
-              <a href="/api/export/purchases">
-                <Button variant="secondary">CSV 다운로드</Button>
-              </a>
-              <CreatePurchaseTrigger
-                hasLogisticsRegistration={registrationCheck.ok ? registrationCheck.data : false}
-              />
-            </div>
+            <CreatePurchaseTrigger
+              hasLogisticsRegistration={registrationCheck.ok ? registrationCheck.data : false}
+            />
           }
         />
         <ProductFilter q={q} />
@@ -62,7 +56,7 @@ export async function ProductsPage({
       <div className="flex flex-col gap-6">
         <PageHeader
           title="매입 관리"
-          description="상품별 매입 기록을 등록합니다. 상품명을 입력하면 있으면 매입만 추가되고 없으면 새로 등록됩니다."
+          description="재고가 남은 매입 건만 표시됩니다. 전체 매입 이력은 기록 페이지에서 확인하세요."
         />
         <Suspense fallback={<TableSkeleton />}>
           <PurchaseList page={purchasePage} />
@@ -72,12 +66,7 @@ export async function ProductsPage({
       <div className="flex flex-col gap-6">
         <PageHeader
           title="판매 내역"
-          description="매입 목록의 상태를 '판매'로 바꾸면 여기에 기록됩니다."
-          action={
-            <a href="/api/export/sales">
-              <Button variant="secondary">CSV 다운로드</Button>
-            </a>
-          }
+          description="취소 가능한 판매 건만 표시됩니다. 전체 판매 이력은 기록 페이지에서 확인하세요."
         />
         <Suspense fallback={<TableSkeleton />}>
           <SaleList page={salePage} />

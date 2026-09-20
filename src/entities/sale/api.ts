@@ -35,7 +35,10 @@ function toSaleWithDetail(row: SaleRow): SaleWithDetail {
 
 const SALE_SELECT = "*, purchases(unit_price, product_id, products(name))";
 
-export const listSales = cache(async function listSales(
+/** Non-canceled sales — the actionable subset (cancelable) for the
+ * 재고관리 페이지. Full history including canceled sales lives on the
+ * 기록 페이지 instead. */
+export const listActiveSales = cache(async function listActiveSales(
   page = 1,
 ): Promise<Paginated<SaleWithDetail>> {
   const supabase = await createClient();
@@ -43,6 +46,7 @@ export const listSales = cache(async function listSales(
   const { data, error, count } = await supabase
     .from("sales")
     .select(SALE_SELECT, { count: "exact" })
+    .is("canceled_at", null)
     .order("sale_date", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);

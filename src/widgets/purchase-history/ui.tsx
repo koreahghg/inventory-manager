@@ -4,6 +4,8 @@ import { Alert } from "@/shared/ui/Alert";
 import { formatCurrency, formatDate } from "@/shared/lib/format";
 import { safely } from "@/shared/lib/safe";
 import { listPurchasesByProduct } from "@/entities/purchase/api";
+import { VendorInput } from "@/features/purchase/update-vendor/ui";
+import { DeletePurchaseControl } from "@/features/purchase/delete-purchase/ui";
 
 export function preload(productId: string) {
   void listPurchasesByProduct(productId);
@@ -34,6 +36,7 @@ export async function PurchaseHistory({ productId }: { productId: string }) {
           <Th>총 매입금액</Th>
           <Th>매입처</Th>
           <Th>메모</Th>
+          <Th></Th>
         </Tr>
       </Thead>
       <Tbody>
@@ -43,8 +46,13 @@ export async function PurchaseHistory({ productId }: { productId: string }) {
             <Td>{purchase.quantity}</Td>
             <Td>{formatCurrency(purchase.unit_price)}</Td>
             <Td>{formatCurrency(purchase.quantity * purchase.unit_price)}</Td>
-            <Td>{purchase.vendor ?? "-"}</Td>
+            <Td>
+              <VendorInput productId={productId} purchaseId={purchase.id} vendor={purchase.vendor} />
+            </Td>
             <Td>{purchase.memo ?? "-"}</Td>
+            <Td>
+              <DeletePurchaseControl purchaseId={purchase.id} />
+            </Td>
           </Tr>
         ))}
       </Tbody>

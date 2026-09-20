@@ -1,7 +1,7 @@
 import Image from "next/image";
-import { EmptyState } from "@/shared/ui/EmptyState";
 import type { ProductImage } from "@/entities/product/model";
 import { deleteProductImage, setPrimaryImage } from "@/features/product/manage-images/actions";
+import { ImageUploadTrigger } from "@/features/product/manage-images/upload-trigger";
 
 export function ProductGallery({
   images,
@@ -13,7 +13,13 @@ export function ProductGallery({
   productId: string;
 }) {
   if (images.length === 0) {
-    return <EmptyState message="등록된 이미지가 없습니다." />;
+    return (
+      <ImageUploadTrigger productId={productId} className="block">
+        <div className="rounded-xl border border-dashed border-grey-200 bg-white p-8 text-center text-body-2 text-grey-500 hover:border-grey-300 hover:bg-grey-50">
+          등록된 이미지가 없습니다. 클릭해서 이미지를 등록해 주세요.
+        </div>
+      </ImageUploadTrigger>
+    );
   }
 
   return (
@@ -58,6 +64,12 @@ export function ProductGallery({
           </div>
         </div>
       ))}
+
+      <ImageUploadTrigger productId={productId} className="block aspect-square">
+        <div className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-grey-200 bg-white text-body-2 text-grey-400 hover:border-grey-300 hover:bg-grey-50">
+          + 이미지 추가
+        </div>
+      </ImageUploadTrigger>
     </div>
   );
 }

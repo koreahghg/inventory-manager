@@ -3,9 +3,6 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/shared/lib/supabase/server";
-import { NEW_PRODUCT_VALUE } from "./constants";
-
-const IMAGE_BUCKET = "product-images";
 
 function str(formData: FormData, key: string): string | null {
   const value = formData.get(key);
@@ -29,7 +26,7 @@ export async function createPurchase(
   prevState: CreatePurchaseState,
   formData: FormData,
 ): Promise<CreatePurchaseState> {
-  const productId = str(formData, "product_id");
+  const productName = str(formData, "product_name");
   const purchaseDate = str(formData, "purchase_date");
   const quantity = num(formData, "quantity");
   const unitPrice = num(formData, "unit_price");
@@ -42,72 +39,31 @@ export async function createPurchase(
     resetToken: prevState.resetToken,
   });
 
-  if (!productId) return fail("상품을 선택해 주세요.");
+  if (!productName) return fail("상품명을 입력해 주세요.");
   if (!purchaseDate) return fail("매입일을 입력해 주세요.");
   if (!quantity || quantity <= 0) return fail("수량을 올바르게 입력해 주세요.");
   if (unitPrice === null || unitPrice < 0) return fail("매입가를 올바르게 입력해 주세요.");
 
   const supabase = await createClient();
 
-  if (productId === NEW_PRODUCT_VALUE) {
-    const name = str(formData, "new_name");
-    if (!name) return fail("상품명을 입력해 주세요.");
+  // 같은 이름의 상품이 이미 있으면 그 상품에 매입만 추가하고, 없으면
+  // 상품을 새로 만들면서 최초 매입을 함께 등록한다 (대소문자/공백은
+  // 무시하는 완전 일치 비교 — ilike에 와일드카드가 없으면 대소문자만
+  // 무시하는 동등 비교로 동작한다).
+  const { data: existing, error: lookupError } = await supabase
+    .from("products")
+    .select("id")
+    .ilike("name", productName)
+    .limit(1)
+    .maybeSingle();
 
-    const { data: newProductId, error: rpcError } = await supabase.rpc(
-      "create_product_with_initial_purchase",
-      {
-        p_name: name,
-        p_brand: str(formData, "new_brand"),
-        p_style_code: str(formData, "new_style_code"),
-        p_size: str(formData, "new_size"),
-        p_color: str(formData, "new_color"),
-        p_memo: str(formData, "new_memo"),
-        p_purchase_date: purchaseDate,
-        p_quantity: quantity,
-        p_unit_price: unitPrice,
-        p_vendor: vendor,
-        p_purchase_memo: memo,
-      },
-    );
+  if (lookupError) {
+    return fail(`상품 조회에 실패했습니다: ${lookupError.message}`);
+  }
 
-    if (rpcError) {
-      return fail(`등록에 실패했습니다: ${rpcError.message}`);
-    }
-
-    const images = formData
-      .getAll("images")
-      .filter((entry): entry is File => entry instanceof File && entry.size > 0);
-
-    const uploadedUrls: string[] = [];
-    for (const image of images) {
-      const extension = image.name.split(".").pop() ?? "jpg";
-      const path = `${newProductId}/${randomUUID()}.${extension}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(IMAGE_BUCKET)
-        .upload(path, image, { contentType: image.type });
-
-      if (!uploadError) {
-        const { data: publicUrl } = supabase.storage
-          .from(IMAGE_BUCKET)
-          .getPublicUrl(path);
-        uploadedUrls.push(publicUrl.publicUrl);
-      }
-    }
-
-    if (uploadedUrls.length > 0) {
-      await supabase.from("product_images").insert(
-        uploadedUrls.map((url, index) => ({
-          product_id: newProductId,
-          url,
-          is_primary: index === 0,
-          sort_order: index,
-        })),
-      );
-    }
-  } else {
+  if (existing) {
     const { error } = await supabase.from("purchases").insert({
-      product_id: productId,
+      product_id: existing.id,
       purchase_date: purchaseDate,
       quantity,
       unit_price: unitPrice,
@@ -117,6 +73,24 @@ export async function createPurchase(
 
     if (error) {
       return fail(`등록에 실패했습니다: ${error.message}`);
+    }
+  } else {
+    const { error: rpcError } = await supabase.rpc("create_product_with_initial_purchase", {
+      p_name: productName,
+      p_brand: null,
+      p_style_code: null,
+      p_size: null,
+      p_color: null,
+      p_memo: null,
+      p_purchase_date: purchaseDate,
+      p_quantity: quantity,
+      p_unit_price: unitPrice,
+      p_vendor: vendor,
+      p_purchase_memo: memo,
+    });
+
+    if (rpcError) {
+      return fail(`등록에 실패했습니다: ${rpcError.message}`);
     }
   }
 

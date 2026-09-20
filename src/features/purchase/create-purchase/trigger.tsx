@@ -7,13 +7,9 @@ import { Modal } from "@/shared/ui/Modal";
 import { LogisticsGateContent } from "@/features/logistics-registration/gate-content";
 import { CreatePurchaseForm } from "./ui";
 
-type ProductOption = { id: string; name: string; brand: string | null };
-
 export function CreatePurchaseTrigger({
-  products,
   hasLogisticsRegistration,
 }: {
-  products: ProductOption[];
   hasLogisticsRegistration: boolean;
 }) {
   const router = useRouter();
@@ -34,7 +30,7 @@ export function CreatePurchaseTrigger({
               router.refresh();
             }}
           >
-            <CreatePurchaseForm products={products} onClose={close} />
+            <CreatePurchaseForm onClose={close} />
           </LogisticsGateContent>
         </Modal>
       )}

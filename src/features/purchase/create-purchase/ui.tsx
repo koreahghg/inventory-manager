@@ -1,32 +1,21 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
 import { Input } from "@/shared/ui/Input";
-import { Select } from "@/shared/ui/Select";
 import { Textarea } from "@/shared/ui/Textarea";
 import { Alert } from "@/shared/ui/Alert";
 import { createPurchase, type CreatePurchaseState } from "./actions";
-import { NEW_PRODUCT_VALUE } from "./constants";
-
-type ProductOption = { id: string; name: string; brand: string | null };
 
 const INITIAL_STATE: CreatePurchaseState = { error: null, success: false, resetToken: "" };
 
-export function CreatePurchaseForm({
-  products,
-  onClose,
-}: {
-  products: ProductOption[];
-  onClose?: () => void;
-}) {
+export function CreatePurchaseForm({ onClose }: { onClose?: () => void }) {
   const [state, formAction, isPending] = useActionState(createPurchase, INITIAL_STATE);
 
   return (
     <PurchaseFormFields
       key={state.resetToken}
-      products={products}
       formAction={formAction}
       error={state.error}
       isPending={isPending}
@@ -36,81 +25,31 @@ export function CreatePurchaseForm({
 }
 
 function PurchaseFormFields({
-  products,
   formAction,
   error,
   isPending,
   onClose,
 }: {
-  products: ProductOption[];
   formAction: (formData: FormData) => void;
   error: string | null;
   isPending: boolean;
   onClose?: () => void;
 }) {
-  const [productId, setProductId] = useState("");
-  const isNewProduct = productId === NEW_PRODUCT_VALUE;
-
   return (
-    <form
-      action={formAction}
-      encType="multipart/form-data"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
-    >
+    <form action={formAction} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <Field label="상품" htmlFor="product_id" required>
-          <Select
-            id="product_id"
-            name="product_id"
+        <Field label="상품명" htmlFor="product_name" required>
+          <Input
+            id="product_name"
+            name="product_name"
+            placeholder="예: 에어포스 1 '07"
             required
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-          >
-            <option value="" disabled>
-              상품 선택
-            </option>
-            <option value={NEW_PRODUCT_VALUE}>+ 새 상품 등록</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.brand ? `${product.brand} · ` : ""}
-                {product.name}
-              </option>
-            ))}
-          </Select>
+          />
         </Field>
+        <p className="mt-1 text-caption text-grey-400">
+          이미 등록된 상품명이면 매입만 추가되고, 없으면 상품이 새로 등록됩니다.
+        </p>
       </div>
-
-      {isNewProduct && (
-        <>
-          <div className="sm:col-span-2">
-            <Field label="상품명" htmlFor="new_name" required>
-              <Input id="new_name" name="new_name" placeholder="예: 에어포스 1 '07" required />
-            </Field>
-          </div>
-
-          <div className="sm:col-span-2">
-            <Field label="상품 메모" htmlFor="new_memo">
-              <Textarea id="new_memo" name="new_memo" rows={2} placeholder="메모를 입력해 주세요" />
-            </Field>
-          </div>
-
-          <div className="sm:col-span-2">
-            <Field label="상품 이미지" htmlFor="images">
-              <input
-                id="images"
-                name="images"
-                type="file"
-                accept="image/*"
-                multiple
-                className="text-body-2 text-grey-700 file:mr-3 file:rounded-m file:border-0 file:bg-grey-900 file:px-3 file:py-1.5 file:text-body-2 file:font-medium file:text-white"
-              />
-              <p className="text-caption text-grey-400">
-                첫 번째로 선택한 이미지가 대표 이미지로 지정됩니다.
-              </p>
-            </Field>
-          </div>
-        </>
-      )}
 
       <Field label="매입일" htmlFor="purchase_date" required>
         <Input id="purchase_date" name="purchase_date" type="date" placeholder="날짜 선택" required />
@@ -142,11 +81,11 @@ function PurchaseFormFields({
 
       <div className="flex gap-2 sm:col-span-2">
         {onClose && (
-          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+          <Button type="button" variant="secondary" size="l" className="flex-1" onClick={onClose}>
             취소
           </Button>
         )}
-        <Button type="submit" className="flex-1" disabled={isPending}>
+        <Button type="submit" size="l" className="flex-1" disabled={isPending}>
           {isPending ? "등록 중..." : "매입 등록"}
         </Button>
       </div>

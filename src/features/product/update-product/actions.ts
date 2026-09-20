@@ -24,10 +24,6 @@ export async function updateProduct(
     .from("products")
     .update({
       name,
-      brand: str(formData, "brand"),
-      style_code: str(formData, "style_code"),
-      size: str(formData, "size"),
-      color: str(formData, "color"),
       memo: str(formData, "memo"),
     })
     .eq("id", productId);

@@ -95,10 +95,10 @@ export function QuickSellForm({
       {state.error && <Alert message={state.error} />}
 
       <div className="flex gap-2">
-        <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+        <Button type="button" variant="secondary" size="l" className="flex-1" onClick={onClose}>
           취소
         </Button>
-        <Button type="submit" className="flex-1" disabled={isPending}>
+        <Button type="submit" size="l" className="flex-1" disabled={isPending}>
           {isPending ? "등록 중..." : "판매 등록"}
         </Button>
       </div>

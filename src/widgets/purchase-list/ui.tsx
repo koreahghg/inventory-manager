@@ -8,6 +8,7 @@ import { formatCurrency, formatDate, formatQuantity } from "@/shared/lib/format"
 import { safely } from "@/shared/lib/safe";
 import { listPurchases } from "@/entities/purchase/api";
 import { StockStatusSelect } from "@/features/purchase/update-stock-status/ui";
+import { DeletePurchaseControl } from "@/features/purchase/delete-purchase/ui";
 
 export function preload(page: number) {
   void listPurchases(page);
@@ -41,6 +42,7 @@ export async function PurchaseList({ page }: { page: number }) {
             <Th>총 매입금액</Th>
             <Th>매입처</Th>
             <Th>상태</Th>
+            <Th></Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -68,6 +70,9 @@ export async function PurchaseList({ page }: { page: number }) {
                 ) : (
                   <Badge tone="gray">판매 완료</Badge>
                 )}
+              </Td>
+              <Td>
+                <DeletePurchaseControl purchaseId={purchase.id} />
               </Td>
             </Tr>
           ))}

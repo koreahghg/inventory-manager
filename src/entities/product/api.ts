@@ -113,16 +113,3 @@ export const getProductStock = cache(async function getProductStock(
   if (error) throw error;
   return (data as ProductStock | null) ?? EMPTY_STOCK(id);
 });
-
-export const listProductOptions = cache(async function listProductOptions(): Promise<
-  Pick<Product, "id" | "name" | "brand" | "style_code" | "size" | "color">[]
-> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, brand, style_code, size, color")
-    .order("name", { ascending: true });
-
-  if (error) throw error;
-  return data ?? [];
-});

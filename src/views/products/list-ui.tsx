@@ -8,7 +8,7 @@ import { ProductFilter } from "@/widgets/product-filter/ui";
 import { PurchaseList, preload as preloadPurchaseList } from "@/widgets/purchase-list/ui";
 import { SaleList, preload as preloadSaleList } from "@/widgets/sale-list/ui";
 import { CreatePurchaseTrigger } from "@/features/purchase/create-purchase/trigger";
-import { listProductOptions, type ProductListFilter } from "@/entities/product/api";
+import type { ProductListFilter } from "@/entities/product/api";
 import { hasLogisticsRegistration } from "@/entities/logistics-registration/api";
 
 export type ProductsSearchParams = {
@@ -34,10 +34,7 @@ export async function ProductsPage({
   preloadPurchaseList(purchasePage);
   preloadSaleList(salePage);
 
-  const [productOptions, registrationCheck] = await Promise.all([
-    safely(() => listProductOptions()),
-    safely(() => hasLogisticsRegistration()),
-  ]);
+  const registrationCheck = await safely(() => hasLogisticsRegistration());
 
   return (
     <div className="flex flex-col gap-10">
@@ -50,12 +47,9 @@ export async function ProductsPage({
               <a href="/api/export/purchases">
                 <Button variant="secondary">CSV 다운로드</Button>
               </a>
-              {productOptions.ok && (
-                <CreatePurchaseTrigger
-                  products={productOptions.data}
-                  hasLogisticsRegistration={registrationCheck.ok ? registrationCheck.data : false}
-                />
-              )}
+              <CreatePurchaseTrigger
+                hasLogisticsRegistration={registrationCheck.ok ? registrationCheck.data : false}
+              />
             </div>
           }
         />
@@ -68,7 +62,7 @@ export async function ProductsPage({
       <div className="flex flex-col gap-6">
         <PageHeader
           title="매입 관리"
-          description="상품별 매입 기록을 등록합니다. 목록이 없는 상품은 등록 시 '+ 새 상품 등록'을 선택하세요."
+          description="상품별 매입 기록을 등록합니다. 상품명을 입력하면 있으면 매입만 추가되고 없으면 새로 등록됩니다."
         />
         <Suspense fallback={<TableSkeleton />}>
           <PurchaseList page={purchasePage} />

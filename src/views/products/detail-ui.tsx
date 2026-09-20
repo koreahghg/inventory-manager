@@ -1,10 +1,8 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Card } from "@/shared/ui/Card";
 import { Badge } from "@/shared/ui/Badge";
-import { Button } from "@/shared/ui/Button";
 import { Alert } from "@/shared/ui/Alert";
 import { TableSkeleton } from "@/shared/ui/Skeleton";
 import { formatCurrency, formatQuantity } from "@/shared/lib/format";
@@ -70,9 +68,6 @@ export async function ProductDetailPage({ productId }: { productId: string }) {
               <Badge tone="gray">품절</Badge>
             )}
             {stale && <Badge tone="red">장기재고 {daysSince(stock.oldest_available_purchase_date!)}일</Badge>}
-            <Link href={`/products/${productId}/edit`}>
-              <Button variant="secondary">수정</Button>
-            </Link>
           </div>
         }
       />
@@ -97,7 +92,6 @@ export async function ProductDetailPage({ productId }: { productId: string }) {
       )}
 
       <div>
-        <h2 className="mb-2 text-title-2 font-bold text-grey-900">매입 이력</h2>
         <Suspense fallback={<TableSkeleton />}>
           <PurchaseHistory productId={productId} />
         </Suspense>

@@ -1,11 +1,8 @@
-import { Table, Thead, Tbody, Tr, Th, Td } from "@/shared/ui/Table";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Alert } from "@/shared/ui/Alert";
-import { formatCurrency, formatDate } from "@/shared/lib/format";
 import { safely } from "@/shared/lib/safe";
 import { listPurchasesByProduct } from "@/entities/purchase/api";
-import { VendorInput } from "@/features/purchase/update-vendor/ui";
-import { DeletePurchaseControl } from "@/features/purchase/delete-purchase/ui";
+import { PurchaseHistoryTable } from "./table";
 
 export function preload(productId: string) {
   void listPurchasesByProduct(productId);
@@ -23,39 +20,13 @@ export async function PurchaseHistory({ productId }: { productId: string }) {
   const purchases = result.data;
 
   if (purchases.length === 0) {
-    return <EmptyState message="매입 이력이 없습니다." />;
+    return (
+      <div className="flex flex-col gap-2">
+        <h2 className="text-title-2 font-bold text-grey-900">매입 이력</h2>
+        <EmptyState message="매입 이력이 없습니다." />
+      </div>
+    );
   }
 
-  return (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th>매입일</Th>
-          <Th>수량</Th>
-          <Th>개당 매입가</Th>
-          <Th>총 매입금액</Th>
-          <Th>매입처</Th>
-          <Th>메모</Th>
-          <Th></Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {purchases.map((purchase) => (
-          <Tr key={purchase.id}>
-            <Td>{formatDate(purchase.purchase_date)}</Td>
-            <Td>{purchase.quantity}</Td>
-            <Td>{formatCurrency(purchase.unit_price)}</Td>
-            <Td>{formatCurrency(purchase.quantity * purchase.unit_price)}</Td>
-            <Td>
-              <VendorInput productId={productId} purchaseId={purchase.id} vendor={purchase.vendor} />
-            </Td>
-            <Td>{purchase.memo ?? "-"}</Td>
-            <Td>
-              <DeletePurchaseControl purchaseId={purchase.id} />
-            </Td>
-          </Tr>
-        ))}
-      </Tbody>
-    </Table>
-  );
+  return <PurchaseHistoryTable productId={productId} purchases={purchases} />;
 }

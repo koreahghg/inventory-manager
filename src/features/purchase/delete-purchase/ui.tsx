@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/shared/ui/Button";
+import { Modal } from "@/shared/ui/Modal";
 import { deletePurchase } from "./actions";
 
 export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
@@ -11,8 +12,13 @@ export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (!open) {
-    return (
+  const close = () => {
+    setOpen(false);
+    setError(null);
+  };
+
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -20,44 +26,42 @@ export function DeletePurchaseControl({ purchaseId }: { purchaseId: string }) {
       >
         삭제
       </button>
-    );
-  }
 
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1 whitespace-nowrap">
-        <span className="text-caption text-grey-500">삭제할까요?</span>
-        <Button
-          type="button"
-          variant="danger"
-          size="s"
-          disabled={isPending}
-          onClick={() => {
-            setError(null);
-            startTransition(async () => {
-              try {
-                await deletePurchase(purchaseId);
-                router.refresh();
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "삭제에 실패했습니다.");
-              }
-            });
-          }}
-        >
-          {isPending ? "삭제 중" : "확인"}
-        </Button>
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            setError(null);
-          }}
-          className="text-caption text-grey-400 hover:text-grey-600"
-        >
-          취소
-        </button>
-      </div>
-      {error && <p className="text-caption text-danger">{error}</p>}
-    </div>
+      {open && (
+        <Modal onClose={close}>
+          <h2 className="mb-2 text-title-1 font-bold text-grey-900">매입 기록 삭제</h2>
+          <p className="mb-6 text-body-2 text-grey-600">
+            이 매입 기록을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.
+          </p>
+          {error && <p className="mb-4 text-body-2 text-danger">{error}</p>}
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" size="l" className="flex-1" onClick={close}>
+              취소
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="l"
+              className="flex-1"
+              disabled={isPending}
+              onClick={() => {
+                setError(null);
+                startTransition(async () => {
+                  try {
+                    await deletePurchase(purchaseId);
+                    router.refresh();
+                    close();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "삭제에 실패했습니다.");
+                  }
+                });
+              }}
+            >
+              {isPending ? "삭제 중..." : "삭제"}
+            </Button>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }

@@ -82,21 +82,11 @@ function PurchaseFormFields({
 
       {isNewProduct && (
         <>
-          <Field label="상품명" htmlFor="new_name" required>
-            <Input id="new_name" name="new_name" placeholder="예: 에어포스 1 '07" required />
-          </Field>
-          <Field label="브랜드" htmlFor="new_brand">
-            <Input id="new_brand" name="new_brand" placeholder="예: 나이키" />
-          </Field>
-          <Field label="품번" htmlFor="new_style_code">
-            <Input id="new_style_code" name="new_style_code" placeholder="예: CW2288-111" />
-          </Field>
-          <Field label="사이즈" htmlFor="new_size">
-            <Input id="new_size" name="new_size" placeholder="예: 270" />
-          </Field>
-          <Field label="색상" htmlFor="new_color">
-            <Input id="new_color" name="new_color" placeholder="예: 화이트" />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="상품명" htmlFor="new_name" required>
+              <Input id="new_name" name="new_name" placeholder="예: 에어포스 1 '07" required />
+            </Field>
+          </div>
 
           <div className="sm:col-span-2">
             <Field label="상품 메모" htmlFor="new_memo">

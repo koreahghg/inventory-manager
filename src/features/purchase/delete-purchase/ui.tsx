@@ -21,13 +21,9 @@ export function DeletePurchaseControl({ purchaseIds }: { purchaseIds: string[] }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-caption font-medium text-danger hover:underline"
-      >
+      <Button type="button" variant="danger" size="s" onClick={() => setOpen(true)}>
         삭제
-      </button>
+      </Button>
 
       {open && (
         <Modal onClose={close}>

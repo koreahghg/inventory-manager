@@ -25,9 +25,9 @@ export async function StatsPage({
 }) {
   const now = new Date();
   const granularity: StatsGranularity =
-    searchParams.granularity === "month" || searchParams.granularity === "day"
+    searchParams.granularity === "year" || searchParams.granularity === "day"
       ? searchParams.granularity
-      : "year";
+      : "month";
   const year = Number(searchParams.year) || now.getFullYear();
   const month = Number(searchParams.month) || now.getMonth() + 1;
 

@@ -18,8 +18,8 @@ export type Purchase = {
   created_at: string;
 };
 
-/** A purchase batch that still has remaining stock — the actionable subset
- * shown on the 재고관리 page (전체 이력은 기록 페이지에서 확인). */
+/** A purchase batch that still has remaining stock — used for the 재고 현황
+ * 홈 화면 표 (배치 하나하나를 각자 행으로 보여줌). */
 export type ActivePurchase = {
   purchase_id: string;
   product_id: string;
@@ -34,17 +34,23 @@ export type ActivePurchase = {
   unit_price: number;
 };
 
-/** 재고관리 페이지 표 한 행 — 같은 상품·같은 상태의 매입 배치를 합쳐서
- * 보여준다. 매입처/단가가 배치마다 다를 수 있어 펼치면 batches로 개별
- * 배치를 볼 수 있다(최신순). */
+/** 재고관리 페이지 표 한 행 — 같은 상품·같은 상태·같은 매입일·같은
+ * 단가·같은 매입처인 매입 배치를 하나로 합쳐서 보여준다(재고 상태를
+ * 옮기면서 원래 하나였던 매입이 여러 행으로 쪼개진 경우를 다시 하나처럼
+ * 보여줌). batches는 실제 조작(이동/판매/삭제) 대상이 되는 원본 배치들 —
+ * 부분적으로 판매된 배치가 섞여 있을 수 있어 배치별 잔여 수량을 따로 담는다. */
 export type StockGroup = {
+  batches: { purchase_id: string; remaining_quantity: number }[];
   product_id: string;
-  stock_status: StockStatus;
   product_name: string;
   product_brand: string | null;
   product_image_url: string | null;
+  purchase_date: string;
+  vendor: string | null;
+  stock_status: StockStatus;
+  purchased_quantity: number;
   remaining_quantity: number;
-  batches: ActivePurchase[];
+  unit_price: number;
 };
 
 export type AvailablePurchaseBatch = {
@@ -54,18 +60,4 @@ export type AvailablePurchaseBatch = {
   vendor: string | null;
   unit_price: number;
   remaining_quantity: number;
-};
-
-/** 재고 현황 홈 화면 카드 — 같은 상품·같은 상태의 매입 배치를 합쳐서 하나로
- * 보여준다. batches는 오래된 매입분부터(FIFO) 정렬돼 있다. */
-export type StockBoardItem = {
-  product_id: string;
-  product_name: string;
-  brand: string | null;
-  size: string | null;
-  color: string | null;
-  stock_status: StockStatus;
-  remaining_quantity: number;
-  oldest_purchase_date: string;
-  batches: { purchase_id: string; remaining_quantity: number; purchase_date: string }[];
 };

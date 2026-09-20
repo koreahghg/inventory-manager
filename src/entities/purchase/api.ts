@@ -6,16 +6,16 @@ import type {
   ActivePurchase,
   AvailablePurchaseBatch,
   Purchase,
-  StockBoardItem,
   StockGroup,
   StockStatus,
 } from "./model";
 
-/** Purchase batches that still have remaining stock, grouped by (product,
- * stock_status) — the 재고관리 page table. 같은 상품·같은 상태의 배치는
- * 한 행으로 합쳐지고, 배치가 여러 개면 펼쳐서 개별 매입처/단가를 볼 수
- * 있다. Full history (sold-out batches included) lives on the 기록 page
- * instead. */
+/** Purchase batches that still have remaining stock, merged by (product,
+ * stock_status, purchase_date, unit_price, vendor) — the 재고관리 page
+ * table. 재고 상태를 옮기면서 원래 하나였던 매입이 여러 행으로 쪼개진
+ * 경우, 조건이 모두 같으면 다시 하나의 행으로 합쳐서 보여준다 (조건이
+ * 하나라도 다르면 별도 행). Full history (sold-out batches included)
+ * lives on the 기록 page instead. */
 export const listActiveStock = cache(async function listActiveStock(
   page = 1,
   q?: string,
@@ -81,37 +81,36 @@ export const listActiveStock = cache(async function listActiveStock(
 
   const groups = new Map<string, StockGroup>();
   for (const row of data ?? []) {
-    const key = `${row.product_id}:${row.stock_status}`;
-    const batch: ActivePurchase = {
-      ...row,
-      stock_status: row.stock_status as StockStatus,
-      product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
-      product_brand: productById.get(row.product_id)?.brand ?? null,
-      product_image_url: imageByProductId.get(row.product_id) ?? null,
-    };
+    const key = `${row.product_id}:${row.stock_status}:${row.purchase_date}:${row.unit_price}:${row.vendor ?? ""}`;
 
     const existing = groups.get(key);
     if (existing) {
+      existing.purchased_quantity += row.purchased_quantity;
       existing.remaining_quantity += row.remaining_quantity;
-      existing.batches.push(batch);
+      existing.batches.push({
+        purchase_id: row.purchase_id,
+        remaining_quantity: row.remaining_quantity,
+      });
       continue;
     }
 
     groups.set(key, {
+      batches: [{ purchase_id: row.purchase_id, remaining_quantity: row.remaining_quantity }],
       product_id: row.product_id,
-      stock_status: batch.stock_status,
-      product_name: batch.product_name,
-      product_brand: batch.product_brand,
-      product_image_url: batch.product_image_url,
+      product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
+      product_brand: productById.get(row.product_id)?.brand ?? null,
+      product_image_url: imageByProductId.get(row.product_id) ?? null,
+      purchase_date: row.purchase_date,
+      vendor: row.vendor,
+      stock_status: row.stock_status as StockStatus,
+      purchased_quantity: row.purchased_quantity,
       remaining_quantity: row.remaining_quantity,
-      batches: [batch],
+      unit_price: row.unit_price,
     });
   }
 
-  // 그룹 안 batches는 이미 최신순(fetch 순서)으로 쌓였다. 그룹 자체도
-  // 가장 최근 매입일(batches[0]) 기준 최신순으로 정렬한다.
   const allGroups = Array.from(groups.values()).sort((a, b) =>
-    (b.batches[0]?.purchase_date ?? "").localeCompare(a.batches[0]?.purchase_date ?? ""),
+    b.purchase_date.localeCompare(a.purchase_date),
   );
 
   const [from, to] = rangeFor(page, PAGE_SIZE);
@@ -167,61 +166,54 @@ export const listAllAvailablePurchaseBatches = cache(
   },
 );
 
-/** Every batch with remaining stock, grouped by (product, stock_status) on
- * the home board — 여러 매입 배치가 같은 상품·같은 상태에 있으면 카드
- * 하나로 합쳐서 보여준다. batches는 FIFO(오래된 매입분부터) 순으로 담는다. */
+/** Every batch with remaining stock, for the 재고 현황 홈 화면 표 — 배치
+ * 하나하나를 각자 행으로 보여준다 (재고관리 페이지와 달리 합치지 않음). */
 export const listStockBoard = cache(async function listStockBoard(): Promise<
-  StockBoardItem[]
+  ActivePurchase[]
 > {
   const supabase = await createClient();
 
-  const [{ data: stockRows, error: stockError }, { data: products, error: productsError }] =
-    await Promise.all([
-      supabase
-        .from("v_purchase_stock")
-        .select("purchase_id, product_id, purchase_date, stock_status, remaining_quantity")
-        .gt("remaining_quantity", 0)
-        .order("purchase_date", { ascending: true }),
-      supabase.from("products").select("id, name, brand, size, color"),
-    ]);
+  const { data, error } = await supabase
+    .from("v_purchase_stock")
+    .select(
+      "purchase_id, product_id, purchase_date, vendor, stock_status, purchased_quantity, remaining_quantity, unit_price",
+    )
+    .gt("remaining_quantity", 0)
+    .order("purchase_date", { ascending: false });
 
-  if (stockError) throw stockError;
-  if (productsError) throw productsError;
+  if (error) throw error;
 
-  type ProductRow = { id: string; name: string; brand: string | null; size: string | null; color: string | null };
-  const productById = new Map((products ?? []).map((p) => [p.id, p as ProductRow]));
+  const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
+  const productById = new Map<string, { name: string; brand: string | null }>();
+  const imageByProductId = new Map<string, string>();
 
-  const groups = new Map<string, StockBoardItem>();
-  for (const row of stockRows ?? []) {
-    const key = `${row.product_id}:${row.stock_status}`;
-    const batch = {
-      purchase_id: row.purchase_id,
-      remaining_quantity: row.remaining_quantity,
-      purchase_date: row.purchase_date,
-    };
+  if (productIds.length > 0) {
+    const [{ data: products, error: productsError }, { data: images, error: imagesError }] =
+      await Promise.all([
+        supabase.from("products").select("id, name, brand").in("id", productIds),
+        supabase
+          .from("product_images")
+          .select("product_id, url")
+          .eq("is_primary", true)
+          .in("product_id", productIds),
+      ]);
 
-    const existing = groups.get(key);
-    if (existing) {
-      existing.remaining_quantity += row.remaining_quantity;
-      existing.batches.push(batch);
-      continue;
+    if (productsError) throw productsError;
+    if (imagesError) throw imagesError;
+
+    for (const product of products ?? []) {
+      productById.set(product.id, { name: product.name, brand: product.brand });
     }
-
-    const product = productById.get(row.product_id);
-    groups.set(key, {
-      product_id: row.product_id,
-      product_name: product?.name ?? "알 수 없음",
-      brand: product?.brand ?? null,
-      size: product?.size ?? null,
-      color: product?.color ?? null,
-      stock_status: row.stock_status as StockStatus,
-      remaining_quantity: row.remaining_quantity,
-      oldest_purchase_date: row.purchase_date,
-      batches: [batch],
-    });
+    for (const image of images ?? []) {
+      imageByProductId.set(image.product_id, image.url);
+    }
   }
 
-  return Array.from(groups.values()).sort((a, b) =>
-    a.oldest_purchase_date < b.oldest_purchase_date ? 1 : -1,
-  );
+  return (data ?? []).map((row) => ({
+    ...row,
+    stock_status: row.stock_status as StockStatus,
+    product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
+    product_brand: productById.get(row.product_id)?.brand ?? null,
+    product_image_url: imageByProductId.get(row.product_id) ?? null,
+  }));
 });

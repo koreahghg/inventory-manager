@@ -6,17 +6,24 @@ import { Pagination } from "@/shared/ui/Pagination";
 import { formatCurrency, formatDate, formatQuantity } from "@/shared/lib/format";
 import { safely } from "@/shared/lib/safe";
 import { listTransactions } from "@/entities/transaction/api";
+import type { TransactionType } from "@/entities/transaction/model";
 
-export function preload(page: number) {
-  void listTransactions(page);
+export function preload(page: number, type?: TransactionType) {
+  void listTransactions(page, type);
 }
 
-export async function TransactionList({ page }: { page: number }) {
-  const result = await safely(() => listTransactions(page));
+export async function TransactionList({
+  page,
+  type,
+}: {
+  page: number;
+  type?: TransactionType;
+}) {
+  const result = await safely(() => listTransactions(page, type));
 
   if (!result.ok) {
     return (
-      <Alert tone="warning" message="전체 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
+      <Alert tone="warning" message="기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
     );
   }
 
@@ -77,7 +84,7 @@ export async function TransactionList({ page }: { page: number }) {
           ))}
         </Tbody>
       </Table>
-      <Pagination page={page} totalPages={totalPages} paramName="allPage" />
+      <Pagination page={page} totalPages={totalPages} paramName="page" />
     </div>
   );
 }

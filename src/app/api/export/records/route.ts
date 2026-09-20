@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/shared/lib/supabase/server";
 import { toCsv } from "@/shared/lib/csv";
 import type { Transaction } from "@/entities/transaction/model";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
@@ -14,9 +14,13 @@ export async function GET() {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
-      .from("v_transactions")
-      .select("*")
+    const typeParam = request.nextUrl.searchParams.get("type");
+    const type = typeParam === "purchase" || typeParam === "sale" ? typeParam : null;
+
+    let query = supabase.from("v_transactions").select("*");
+    if (type) query = query.eq("type", type);
+
+    const { data, error } = await query
       .order("record_date", { ascending: false })
       .order("created_at", { ascending: false });
 

@@ -4,7 +4,6 @@ import { useActionState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
 import { Input } from "@/shared/ui/Input";
-import { Textarea } from "@/shared/ui/Textarea";
 import { Alert } from "@/shared/ui/Alert";
 import { createPurchase, type CreatePurchaseState } from "./actions";
 
@@ -66,12 +65,6 @@ function PurchaseFormFields({
       <Field label="매입처" htmlFor="vendor">
         <Input id="vendor" name="vendor" placeholder="예: 스탁엑스" />
       </Field>
-
-      <div className="sm:col-span-2">
-        <Field label="매입 메모" htmlFor="memo">
-          <Textarea id="memo" name="memo" rows={2} placeholder="메모를 입력해 주세요" />
-        </Field>
-      </div>
 
       {error && (
         <div className="sm:col-span-2">

@@ -31,7 +31,6 @@ export async function createPurchase(
   const quantity = num(formData, "quantity");
   const unitPrice = num(formData, "unit_price");
   const vendor = str(formData, "vendor");
-  const memo = str(formData, "memo");
 
   const fail = (error: string): CreatePurchaseState => ({
     error,
@@ -68,7 +67,6 @@ export async function createPurchase(
       quantity,
       unit_price: unitPrice,
       vendor,
-      memo,
     });
 
     if (error) {
@@ -86,7 +84,6 @@ export async function createPurchase(
       p_quantity: quantity,
       p_unit_price: unitPrice,
       p_vendor: vendor,
-      p_purchase_memo: memo,
     });
 
     if (rpcError) {

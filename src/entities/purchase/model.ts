@@ -13,7 +13,6 @@ export type Purchase = {
   quantity: number;
   unit_price: number;
   vendor: string | null;
-  memo: string | null;
   stock_status: StockStatus;
   created_at: string;
 };

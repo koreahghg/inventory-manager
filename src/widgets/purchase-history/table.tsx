@@ -16,18 +16,17 @@ type PurchaseGroup = {
   purchase_date: string;
   unit_price: number;
   vendor: string | null;
-  memo: string | null;
   quantity: number;
   ids: string[];
 };
 
-/** 같은 매입일·단가·매입처·메모를 가진 행을 하나로 합친다 — 재고 상태를
- * 옮기면서 원래 하나였던 매입이 여러 행으로 쪼개진 경우, 매입 이력에서는
- * 다시 하나처럼 보여준다. */
+/** 같은 매입일·단가·매입처를 가진 행을 하나로 합친다 — 재고 상태를 옮기면서
+ * 원래 하나였던 매입이 여러 행으로 쪼개진 경우, 매입 이력에서는 다시
+ * 하나처럼 보여준다. */
 function groupPurchases(purchases: Purchase[]): PurchaseGroup[] {
   const groups = new Map<string, PurchaseGroup>();
   for (const p of purchases) {
-    const key = `${p.purchase_date}|${p.unit_price}|${p.vendor ?? ""}|${p.memo ?? ""}`;
+    const key = `${p.purchase_date}|${p.unit_price}|${p.vendor ?? ""}`;
     const existing = groups.get(key);
     if (existing) {
       existing.quantity += p.quantity;
@@ -39,7 +38,6 @@ function groupPurchases(purchases: Purchase[]): PurchaseGroup[] {
       purchase_date: p.purchase_date,
       unit_price: p.unit_price,
       vendor: p.vendor,
-      memo: p.memo,
       quantity: p.quantity,
       ids: [p.id],
     });
@@ -112,7 +110,6 @@ export function PurchaseHistoryTable({
             <Th>개당 매입가</Th>
             <Th>총 매입금액</Th>
             <Th>매입처</Th>
-            <Th>메모</Th>
             <Th></Th>
           </Tr>
         </Thead>
@@ -133,7 +130,6 @@ export function PurchaseHistoryTable({
                   }
                 />
               </Td>
-              <Td>{group.memo ?? "-"}</Td>
               <Td>
                 <DeletePurchaseControl purchaseIds={group.ids} />
               </Td>

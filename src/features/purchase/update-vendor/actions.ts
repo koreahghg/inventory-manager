@@ -14,4 +14,5 @@ export async function updateVendor(productId: string, purchaseId: string, vendor
 
   revalidatePath(`/products/${productId}`);
   revalidatePath("/products");
+  revalidatePath("/records");
 }

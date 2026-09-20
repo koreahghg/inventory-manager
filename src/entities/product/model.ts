@@ -26,8 +26,3 @@ export type ProductStock = {
   remaining_cost: number;
   oldest_available_purchase_date: string | null;
 };
-
-export type ProductWithStock = Product & {
-  primary_image_url: string | null;
-  stock: ProductStock;
-};

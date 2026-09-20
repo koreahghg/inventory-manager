@@ -16,5 +16,6 @@ export async function deletePurchase(purchaseId: string) {
 
   revalidatePath("/products");
   revalidatePath("/stats");
+  revalidatePath("/records");
   revalidatePath("/");
 }

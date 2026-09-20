@@ -63,6 +63,7 @@ export async function createSale(
 
   revalidatePath("/products");
   revalidatePath("/stats");
+  revalidatePath("/records");
   revalidatePath("/");
 
   return { error: null, success: true, resetToken: crypto.randomUUID() };

@@ -29,6 +29,7 @@ export async function cancelSale(
 
   revalidatePath("/products");
   revalidatePath("/stats");
+  revalidatePath("/records");
   revalidatePath("/");
 
   return { error: null };

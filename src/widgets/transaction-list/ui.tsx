@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, formatQuantity } from "@/shared/lib/format"
 import { safely } from "@/shared/lib/safe";
 import { listTransactions } from "@/entities/transaction/api";
 import type { TransactionType } from "@/entities/transaction/model";
+import { CancelSaleControl } from "@/features/sale/cancel-sale/ui";
 
 export function preload(page: number, type?: TransactionType) {
   void listTransactions(page, type);
@@ -73,7 +74,7 @@ export async function TransactionList({
                   tx.canceled_at ? (
                     <Badge tone="gray">취소됨</Badge>
                   ) : (
-                    <Badge tone="green">정상</Badge>
+                    <CancelSaleControl saleId={tx.id} />
                   )
                 ) : (
                   "-"

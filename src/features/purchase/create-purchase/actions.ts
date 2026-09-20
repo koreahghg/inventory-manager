@@ -96,6 +96,7 @@ export async function createPurchase(
 
   revalidatePath("/products");
   revalidatePath("/stats");
+  revalidatePath("/records");
   revalidatePath("/");
 
   return { error: null, success: true, resetToken: randomUUID() };

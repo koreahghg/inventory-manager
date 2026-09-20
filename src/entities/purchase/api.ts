@@ -10,21 +10,45 @@ import type {
   StockStatus,
 } from "./model";
 
-/** Purchase batches that still have remaining stock — the actionable subset
- * for the 재고관리 page. Full history (sold-out batches included) lives on
- * the 기록 page instead. */
+/** Purchase batches that still have remaining stock — the single 재고관리
+ * page table (상태 변경/판매 등록/삭제를 여기서 전부 처리). Full history
+ * (sold-out batches included) lives on the 기록 page instead. */
 export const listActivePurchases = cache(async function listActivePurchases(
   page = 1,
+  q?: string,
 ): Promise<Paginated<ActivePurchase>> {
   const supabase = await createClient();
   const [from, to] = rangeFor(page, PAGE_SIZE);
-  const { data, error, count } = await supabase
+
+  let matchingProductIds: string[] | null = null;
+  const term = q?.trim().replace(/[%,]/g, "");
+  if (term) {
+    const { data: matches, error: matchError } = await supabase
+      .from("products")
+      .select("id")
+      .or(`name.ilike.%${term}%,brand.ilike.%${term}%,style_code.ilike.%${term}%`);
+
+    if (matchError) throw matchError;
+    matchingProductIds = (matches ?? []).map((m) => m.id);
+
+    if (matchingProductIds.length === 0) {
+      return paginate([], page, 0, PAGE_SIZE);
+    }
+  }
+
+  let query = supabase
     .from("v_purchase_stock")
     .select(
       "purchase_id, product_id, purchase_date, vendor, stock_status, purchased_quantity, remaining_quantity, unit_price",
       { count: "exact" },
     )
-    .gt("remaining_quantity", 0)
+    .gt("remaining_quantity", 0);
+
+  if (matchingProductIds) {
+    query = query.in("product_id", matchingProductIds);
+  }
+
+  const { data, error, count } = await query
     .order("purchase_date", { ascending: false })
     .range(from, to);
 
@@ -32,16 +56,27 @@ export const listActivePurchases = cache(async function listActivePurchases(
 
   const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
   const productById = new Map<string, { name: string; brand: string | null }>();
+  const imageByProductId = new Map<string, string>();
 
   if (productIds.length > 0) {
-    const { data: products, error: productsError } = await supabase
-      .from("products")
-      .select("id, name, brand")
-      .in("id", productIds);
+    const [{ data: products, error: productsError }, { data: images, error: imagesError }] =
+      await Promise.all([
+        supabase.from("products").select("id, name, brand").in("id", productIds),
+        supabase
+          .from("product_images")
+          .select("product_id, url")
+          .eq("is_primary", true)
+          .in("product_id", productIds),
+      ]);
 
     if (productsError) throw productsError;
+    if (imagesError) throw imagesError;
+
     for (const product of products ?? []) {
       productById.set(product.id, { name: product.name, brand: product.brand });
+    }
+    for (const image of images ?? []) {
+      imageByProductId.set(image.product_id, image.url);
     }
   }
 
@@ -50,6 +85,7 @@ export const listActivePurchases = cache(async function listActivePurchases(
     stock_status: row.stock_status as StockStatus,
     product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
     product_brand: productById.get(row.product_id)?.brand ?? null,
+    product_image_url: imageByProductId.get(row.product_id) ?? null,
   }));
 
   return paginate(rows, page, count ?? 0, PAGE_SIZE);

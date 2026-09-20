@@ -15,7 +15,6 @@ type RawSale = {
   fee: number;
   shipping_fee: number;
   other_fee: number;
-  purchases: { unit_price: number } | null;
 };
 type RawRegistration = { registered_at: string; fee: number };
 
@@ -36,7 +35,7 @@ const fetchRawTransactions = cache(async function fetchRawTransactions(
       .lte("purchase_date", to),
     supabase
       .from("sales")
-      .select("sale_date, quantity, sale_price, fee, shipping_fee, other_fee, purchases(unit_price)")
+      .select("sale_date, quantity, sale_price, fee, shipping_fee, other_fee")
       .is("canceled_at", null)
       .gte("sale_date", from)
       .lte("sale_date", to),
@@ -80,8 +79,12 @@ function applyTransactions(
   for (const p of purchases) {
     const row = buckets.get(keyOf(p.purchase_date));
     if (!row) continue;
+    const amount = p.quantity * p.unit_price;
     row.purchaseQuantity += p.quantity;
-    row.purchaseAmount += p.quantity * p.unit_price;
+    row.purchaseAmount += amount;
+    // 매입은 매입 시점에 즉시 비용으로 반영한다(현금흐름 기준) — 판매
+    // 시점에 매입원가를 또 차감하면 이중 차감이 된다.
+    row.netProfit -= amount;
   }
 
   for (const s of sales) {
@@ -90,9 +93,7 @@ function applyTransactions(
     row.saleQuantity += s.quantity;
     row.saleAmount += s.sale_price;
     row.netProfit += calculateNetProfit({
-      quantity: s.quantity,
       salePrice: s.sale_price,
-      purchaseUnitPrice: s.purchases?.unit_price ?? 0,
       fee: s.fee,
       shippingFee: s.shipping_fee,
       otherFee: s.other_fee,

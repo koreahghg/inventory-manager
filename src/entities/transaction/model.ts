@@ -12,5 +12,6 @@ export type Transaction = {
   counterparty: string | null;
   canceled_at: string | null;
   memo: string | null;
+  net_profit: number;
   created_at: string;
 };

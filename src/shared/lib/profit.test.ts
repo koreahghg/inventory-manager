@@ -12,28 +12,24 @@ describe("calculateMatchedPurchaseCost", () => {
 });
 
 describe("calculateNetProfit", () => {
-  it("computes 판매금액 - 매입금액 - 수수료 - 배송비 - 기타비용", () => {
+  it("computes 판매금액 - 수수료 - 배송비 - 기타비용 (매입원가는 매입 시점에 별도로 차감됨)", () => {
     const profit = calculateNetProfit({
-      quantity: 2,
       salePrice: 100000,
-      purchaseUnitPrice: 30000,
       fee: 5000,
       shippingFee: 3000,
       otherFee: 1000,
     });
-    // 100000 - (2*30000) - 5000 - 3000 - 1000 = 31000
-    expect(profit).toBe(31000);
+    // 100000 - 5000 - 3000 - 1000 = 91000
+    expect(profit).toBe(91000);
   });
 
-  it("can be negative when sold at a loss", () => {
+  it("can be negative when fees exceed the sale price", () => {
     const profit = calculateNetProfit({
-      quantity: 1,
       salePrice: 10000,
-      purchaseUnitPrice: 20000,
-      fee: 0,
+      fee: 15000,
       shippingFee: 0,
       otherFee: 0,
     });
-    expect(profit).toBe(-10000);
+    expect(profit).toBe(-5000);
   });
 });

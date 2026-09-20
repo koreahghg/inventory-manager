@@ -28,7 +28,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const header = ["구분", "날짜", "상품명", "브랜드", "수량", "단가", "총금액", "거래처", "상태", "메모"];
+    const header = [
+      "구분",
+      "날짜",
+      "상품명",
+      "브랜드",
+      "수량",
+      "단가",
+      "총금액",
+      "거래처",
+      "순이익",
+      "상태",
+      "메모",
+    ];
 
     const rows = ((data ?? []) as Transaction[]).map((tx) => [
       tx.type === "purchase" ? "매입" : "판매",
@@ -39,6 +51,7 @@ export async function GET(request: NextRequest) {
       tx.unit_amount,
       tx.total_amount,
       tx.counterparty ?? "",
+      tx.net_profit,
       tx.type === "sale" ? (tx.canceled_at ? "취소됨" : "정상") : "-",
       tx.memo ?? "",
     ]);

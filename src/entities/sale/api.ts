@@ -21,9 +21,7 @@ function toSaleWithDetail(row: SaleRow): SaleWithDetail {
     purchase_unit_price: unitPrice,
     matched_purchase_cost: calculateMatchedPurchaseCost(row.quantity, unitPrice),
     net_profit: calculateNetProfit({
-      quantity: row.quantity,
       salePrice: row.sale_price,
-      purchaseUnitPrice: unitPrice,
       fee: row.fee,
       shippingFee: row.shipping_fee,
       otherFee: row.other_fee,

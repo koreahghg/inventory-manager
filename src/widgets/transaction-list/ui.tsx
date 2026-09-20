@@ -46,6 +46,7 @@ export async function TransactionList({
             <Th>단가</Th>
             <Th>총금액</Th>
             <Th>거래처</Th>
+            <Th>순이익</Th>
             <Th>상태</Th>
             <Th>메모</Th>
           </Tr>
@@ -69,6 +70,9 @@ export async function TransactionList({
               <Td>{formatCurrency(tx.unit_amount)}</Td>
               <Td>{formatCurrency(tx.total_amount)}</Td>
               <Td>{tx.counterparty ?? "-"}</Td>
+              <Td className={tx.net_profit >= 0 ? "text-success" : "text-danger"}>
+                {formatCurrency(tx.net_profit)}
+              </Td>
               <Td>
                 {tx.type === "sale" ? (
                   tx.canceled_at ? (

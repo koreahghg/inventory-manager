@@ -70,23 +70,26 @@ export function CycleStockStatusControl({
         판매
       </Button>
 
-      {sellModalOpen && sellBatch && (
-        <Modal
-          onClose={() => {
-            setSellModalOpen(false);
-            router.refresh();
-          }}
-        >
-          <h2 className="mb-4 text-title-1 font-bold text-grey-900">판매 등록</h2>
-          <QuickSellForm
-            purchaseId={sellBatch.purchase_id}
-            onClose={() => {
-              setSellModalOpen(false);
-              router.refresh();
-            }}
-          />
-        </Modal>
-      )}
+      <Modal
+        open={sellModalOpen && Boolean(sellBatch)}
+        onClose={() => {
+          setSellModalOpen(false);
+          router.refresh();
+        }}
+      >
+        {sellBatch && (
+          <>
+            <h2 className="mb-4 text-title-1 font-bold text-grey-900">판매 등록</h2>
+            <QuickSellForm
+              purchaseId={sellBatch.purchase_id}
+              onClose={() => {
+                setSellModalOpen(false);
+                router.refresh();
+              }}
+            />
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

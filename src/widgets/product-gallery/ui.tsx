@@ -25,7 +25,7 @@ export function ProductGallery({
     <div className="group relative aspect-square w-full max-w-[240px] overflow-hidden rounded-xl border border-grey-200">
       <Image src={imageUrl} alt={productName} fill sizes="240px" className="object-cover" />
 
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 transition-opacity pointer-fine:group-hover:opacity-100 pointer-coarse:opacity-100">
         <ImageUploadTrigger productId={productId}>
           <span className="inline-flex cursor-pointer items-center rounded bg-white/90 px-1.5 py-0.5 text-[11px] font-medium text-grey-800 hover:bg-white">
             교체

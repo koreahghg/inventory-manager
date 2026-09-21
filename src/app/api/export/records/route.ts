@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/shared/lib/supabase/server";
-import { toCsv } from "@/shared/lib/csv";
+import { toXlsx } from "@/shared/lib/excel";
 import type { Transaction } from "@/entities/transaction/model";
 
 export async function GET(request: NextRequest) {
@@ -56,10 +56,12 @@ export async function GET(request: NextRequest) {
       tx.memo ?? "",
     ]);
 
-    return new NextResponse(toCsv([header, ...rows]), {
+    const buffer = await toXlsx("records", [header, ...rows]);
+
+    return new NextResponse(new Blob([Uint8Array.from(buffer)]), {
       headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="records.csv"`,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="records.xlsx"`,
       },
     });
   } catch {

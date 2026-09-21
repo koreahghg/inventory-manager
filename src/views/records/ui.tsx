@@ -30,7 +30,7 @@ export async function RecordsPage({ searchParams }: { searchParams: RecordsSearc
         description="매입과 판매 기록을 한눈에 확인하고 엑셀로 내보낼 수 있습니다."
         action={
           <a href={exportHref}>
-            <Button variant="secondary">CSV 다운로드</Button>
+            <Button variant="secondary">엑셀 다운로드</Button>
           </a>
         }
       />

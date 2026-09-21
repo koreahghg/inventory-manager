@@ -139,27 +139,25 @@ export function PurchaseHistoryTable({
         </Tbody>
       </Table>
 
-      {confirmOpen && (
-        <Modal onClose={() => setConfirmOpen(false)}>
-          <h2 className="mb-2 text-title-1 font-bold text-grey-900">매입처 저장</h2>
-          <p className="mb-6 text-body-2 text-grey-600">변경한 매입처를 저장하시겠습니까?</p>
-          {error && <p className="mb-4 text-body-2 text-danger">{error}</p>}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="l"
-              className="flex-1"
-              onClick={() => setConfirmOpen(false)}
-            >
-              취소
-            </Button>
-            <Button type="button" size="l" className="flex-1" disabled={isPending} onClick={save}>
-              {isPending ? "저장 중..." : "저장"}
-            </Button>
-          </div>
-        </Modal>
-      )}
+      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <h2 className="mb-2 text-title-1 font-bold text-grey-900">매입처 저장</h2>
+        <p className="mb-6 text-body-2 text-grey-600">변경한 매입처를 저장하시겠습니까?</p>
+        {error && <p className="mb-4 text-body-2 text-danger">{error}</p>}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="l"
+            className="flex-1"
+            onClick={() => setConfirmOpen(false)}
+          >
+            취소
+          </Button>
+          <Button type="button" size="l" className="flex-1" disabled={isPending} onClick={save}>
+            {isPending ? "저장 중..." : "저장"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

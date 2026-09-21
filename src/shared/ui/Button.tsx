@@ -28,7 +28,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex items-center justify-center whitespace-nowrap no-underline transition-colors duration-[120ms] ease-toss [-webkit-tap-highlight-color:transparent] [&::-moz-focus-inner]:border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`inline-flex items-center justify-center whitespace-nowrap no-underline transition-[background-color,color,transform] duration-[120ms] ease-toss active:scale-[0.97] [-webkit-tap-highlight-color:transparent] [&::-moz-focus-inner]:border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...props}
     />
   );

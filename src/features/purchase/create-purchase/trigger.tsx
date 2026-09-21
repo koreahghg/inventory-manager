@@ -19,21 +19,19 @@ export function CreatePurchaseTrigger({
   return (
     <>
       <Button onClick={() => setOpen(true)}>새 매입 등록</Button>
-      {open && (
-        <Modal size={hasLogisticsRegistration ? "lg" : "sm"} onClose={close}>
-          <LogisticsGateContent
-            hasRegistration={hasLogisticsRegistration}
-            title="새 매입 등록"
-            onCancel={close}
-            onRegistered={() => {
-              close();
-              router.refresh();
-            }}
-          >
-            <CreatePurchaseForm onClose={close} />
-          </LogisticsGateContent>
-        </Modal>
-      )}
+      <Modal open={open} size={hasLogisticsRegistration ? "lg" : "sm"} onClose={close}>
+        <LogisticsGateContent
+          hasRegistration={hasLogisticsRegistration}
+          title="새 매입 등록"
+          onCancel={close}
+          onRegistered={() => {
+            close();
+            router.refresh();
+          }}
+        >
+          <CreatePurchaseForm onClose={close} />
+        </LogisticsGateContent>
+      </Modal>
     </>
   );
 }

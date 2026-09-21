@@ -30,7 +30,8 @@ export function ImageUploadTrigger({
       try {
         await uploadProductImage(productId, formData);
         router.refresh();
-      } catch {
+      } catch (err) {
+        console.error(err);
         showToast("이미지 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       } finally {
         if (inputRef.current) inputRef.current.value = "";

@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    // 기본 1MB로는 상품 이미지 업로드가 거의 다 걸린다.
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
 };
 
 export default nextConfig;

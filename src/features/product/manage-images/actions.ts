@@ -16,15 +16,18 @@ async function removeExistingImage(
   supabase: Awaited<ReturnType<typeof createClient>>,
   productId: string,
 ) {
-  const { data: product } = await supabase
+  const { data: product, error } = await supabase
     .from("products")
     .select("image_url")
     .eq("id", productId)
     .maybeSingle();
 
+  if (error) throw error;
+
   const path = product?.image_url ? extractStoragePath(product.image_url) : null;
   if (path) {
-    await supabase.storage.from(IMAGE_BUCKET).remove([path]);
+    const { error: removeError } = await supabase.storage.from(IMAGE_BUCKET).remove([path]);
+    if (removeError) throw removeError;
   }
 }
 
@@ -44,13 +47,15 @@ export async function uploadProductImage(productId: string, formData: FormData) 
     .from(IMAGE_BUCKET)
     .upload(path, image, { contentType: image.type });
 
-  if (!uploadError) {
-    const { data: publicUrl } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-    await supabase
-      .from("products")
-      .update({ image_url: publicUrl.publicUrl })
-      .eq("id", productId);
-  }
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrl } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+  const { error: updateError } = await supabase
+    .from("products")
+    .update({ image_url: publicUrl.publicUrl })
+    .eq("id", productId);
+
+  if (updateError) throw updateError;
 
   revalidatePath(`/products/${productId}`);
   revalidatePath("/products");
@@ -59,7 +64,13 @@ export async function uploadProductImage(productId: string, formData: FormData) 
 export async function deleteProductImage(productId: string) {
   const supabase = await createClient();
   await removeExistingImage(supabase, productId);
-  await supabase.from("products").update({ image_url: null }).eq("id", productId);
+
+  const { error } = await supabase
+    .from("products")
+    .update({ image_url: null })
+    .eq("id", productId);
+
+  if (error) throw error;
 
   revalidatePath(`/products/${productId}`);
   revalidatePath("/products");

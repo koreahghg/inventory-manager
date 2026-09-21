@@ -53,7 +53,7 @@ export async function TransactionList({
         </Thead>
         <Tbody>
           {transactions.map((tx) => (
-            <Tr key={`${tx.type}-${tx.id}`} className={tx.canceled_at ? "opacity-50" : undefined}>
+            <Tr key={`${tx.type}-${tx.id}`}>
               <Td>
                 {tx.type === "purchase" ? (
                   <Badge tone="blue">매입</Badge>
@@ -73,17 +73,7 @@ export async function TransactionList({
               <Td className={tx.net_profit >= 0 ? "text-success" : "text-danger"}>
                 {formatCurrency(tx.net_profit)}
               </Td>
-              <Td>
-                {tx.type === "sale" ? (
-                  tx.canceled_at ? (
-                    <Badge tone="gray">취소됨</Badge>
-                  ) : (
-                    <CancelSaleControl saleId={tx.id} />
-                  )
-                ) : (
-                  "-"
-                )}
-              </Td>
+              <Td>{tx.type === "sale" ? <CancelSaleControl saleId={tx.id} /> : "-"}</Td>
               <Td>{tx.memo ?? "-"}</Td>
             </Tr>
           ))}

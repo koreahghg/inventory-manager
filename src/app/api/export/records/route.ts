@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const typeParam = request.nextUrl.searchParams.get("type");
     const type = typeParam === "purchase" || typeParam === "sale" ? typeParam : null;
 
-    let query = supabase.from("v_transactions").select("*");
+    let query = supabase.from("v_transactions").select("*").is("canceled_at", null);
     if (type) query = query.eq("type", type);
 
     const { data, error } = await query
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       tx.total_amount,
       tx.counterparty ?? "",
       tx.net_profit,
-      tx.type === "sale" ? (tx.canceled_at ? "취소됨" : "정상") : "-",
+      tx.type === "sale" ? "정상" : "-",
       tx.memo ?? "",
     ]);
 

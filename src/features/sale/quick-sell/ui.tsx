@@ -11,11 +11,9 @@ const INITIAL_STATE: CreateSaleState = { error: null, success: false, resetToken
 
 export function QuickSellForm({
   purchaseId,
-  maxQuantity,
   onClose,
 }: {
   purchaseId: string;
-  maxQuantity: number;
   onClose: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(createSale, INITIAL_STATE);
@@ -29,23 +27,10 @@ export function QuickSellForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="purchase_id" value={purchaseId} />
+      <input type="hidden" name="quantity" value={1} />
 
       <Field label="판매일" htmlFor="quick_sale_date" required>
         <Input id="quick_sale_date" name="sale_date" type="date" placeholder="날짜 선택" required />
-      </Field>
-
-      <Field label="수량" htmlFor="quick_sale_quantity" required>
-        <Input
-          id="quick_sale_quantity"
-          name="quantity"
-          type="number"
-          min={1}
-          max={maxQuantity}
-          step={1}
-          defaultValue={1}
-          placeholder="1"
-          required
-        />
       </Field>
 
       <Field label="판매가격" htmlFor="quick_sale_price" required>

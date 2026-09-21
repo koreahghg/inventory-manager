@@ -10,7 +10,9 @@ export const listTransactions = cache(async function listTransactions(
 ): Promise<Paginated<Transaction>> {
   const supabase = await createClient();
   const [from, to] = rangeFor(page, PAGE_SIZE);
-  let query = supabase.from("v_transactions").select("*", { count: "exact" });
+  // 취소된 판매는 재고로 돌아간 것이므로 기록에서도 뺀다 (매입은 canceled_at이
+  // 항상 null이라 이 필터에 영향받지 않는다).
+  let query = supabase.from("v_transactions").select("*", { count: "exact" }).is("canceled_at", null);
   if (type) query = query.eq("type", type);
 
   const { data, error, count } = await query

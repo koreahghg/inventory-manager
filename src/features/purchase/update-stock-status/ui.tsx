@@ -80,7 +80,6 @@ export function CycleStockStatusControl({
           <h2 className="mb-4 text-title-1 font-bold text-grey-900">판매 등록</h2>
           <QuickSellForm
             purchaseId={sellBatch.purchase_id}
-            maxQuantity={sellBatch.remaining_quantity}
             onClose={() => {
               setSellModalOpen(false);
               router.refresh();

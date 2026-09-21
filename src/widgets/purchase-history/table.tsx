@@ -85,7 +85,8 @@ export function PurchaseHistoryTable({
         router.refresh();
         setConfirmOpen(false);
         setEdits({});
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError("저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       }
     });

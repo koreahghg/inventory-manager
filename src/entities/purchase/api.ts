@@ -183,13 +183,13 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
   const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
   const productById = new Map<
     string,
-    { name: string; brand: string | null; image_url: string | null }
+    { name: string; brand: string | null; image_url: string | null; memo: string | null }
   >();
 
   if (productIds.length > 0) {
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select("id, name, brand, image_url")
+      .select("id, name, brand, image_url, memo")
       .in("id", productIds);
 
     if (productsError) throw productsError;
@@ -199,6 +199,7 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
         name: product.name,
         brand: product.brand,
         image_url: product.image_url,
+        memo: product.memo,
       });
     }
   }
@@ -209,5 +210,6 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
     product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
     product_brand: productById.get(row.product_id)?.brand ?? null,
     product_image_url: productById.get(row.product_id)?.image_url ?? null,
+    product_memo: productById.get(row.product_id)?.memo ?? null,
   }));
 });

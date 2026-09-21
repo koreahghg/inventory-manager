@@ -25,6 +25,7 @@ export type ActivePurchase = {
   product_name: string;
   product_brand: string | null;
   product_image_url: string | null;
+  product_memo: string | null;
   purchase_date: string;
   vendor: string | null;
   stock_status: StockStatus;

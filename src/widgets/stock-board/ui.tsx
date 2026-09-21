@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Table, Thead, Tbody, Tr, Th, Td } from "@/shared/ui/Table";
 import { Badge } from "@/shared/ui/Badge";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -8,6 +7,7 @@ import { formatQuantity } from "@/shared/lib/format";
 import { listStockBoard } from "@/entities/purchase/api";
 import { STOCK_STATUS_LABELS, type StockStatus } from "@/entities/purchase/model";
 import { CycleStockStatusControl } from "@/features/purchase/update-stock-status/ui";
+import { ProductMemoButton } from "@/features/product/update-memo/ui";
 
 const COLUMNS: StockStatus[] = ["online", "in_transit", "in_hand"];
 
@@ -66,13 +66,15 @@ export async function StockBoard() {
                   {unitRows.map(({ key, item }) => (
                     <Tr key={key}>
                       <Td>
-                        <Link
-                          href={`/products/${item.product_id}`}
+                        <ProductMemoButton
+                          productId={item.product_id}
+                          productName={
+                            (item.product_brand ? `${item.product_brand} · ` : "") +
+                            item.product_name
+                          }
+                          memo={item.product_memo}
                           className="hover:underline"
-                        >
-                          {item.product_brand ? `${item.product_brand} · ` : ""}
-                          {item.product_name}
-                        </Link>
+                        />
                       </Td>
                       <Td>
                         <CycleStockStatusControl

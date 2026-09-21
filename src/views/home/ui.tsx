@@ -1,5 +1,6 @@
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { StockBoard } from "@/widgets/stock-board/ui";
+import { DashboardTotals } from "@/widgets/dashboard-totals/ui";
 
 export function HomePage() {
   return (
@@ -8,6 +9,7 @@ export function HomePage() {
         title="재고 현황"
         description="온라인 재고, 배송중 재고, 보유 재고를 한눈에 확인합니다."
       />
+      <DashboardTotals />
       <StockBoard />
     </div>
   );

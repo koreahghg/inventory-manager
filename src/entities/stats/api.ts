@@ -1,7 +1,27 @@
 import { cache } from "react";
 import { createClient } from "@/shared/lib/supabase/server";
 import { calculateNetProfit } from "@/shared/lib/profit";
-import type { BreakdownRow, YearRange } from "./model";
+import type { BreakdownRow, DashboardTotals, YearRange } from "./model";
+
+export const getDashboardTotals = cache(async function getDashboardTotals(): Promise<
+  DashboardTotals
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("v_dashboard_totals").select("*").maybeSingle();
+
+  if (error) throw error;
+  return (
+    (data as DashboardTotals | null) ?? {
+      total_purchase_amount: 0,
+      total_purchase_quantity: 0,
+      total_sale_amount: 0,
+      total_sale_quantity: 0,
+      total_net_profit: 0,
+      current_stock_quantity: 0,
+      current_stock_amount: 0,
+    }
+  );
+});
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");

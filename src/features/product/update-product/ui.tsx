@@ -9,17 +9,11 @@ import { Alert } from "@/shared/ui/Alert";
 import { Card } from "@/shared/ui/Card";
 import { ProductGallery } from "@/widgets/product-gallery/ui";
 import { updateProduct, type UpdateProductState } from "./actions";
-import type { Product, ProductImage } from "@/entities/product/model";
+import type { Product } from "@/entities/product/model";
 
 const INITIAL_STATE: UpdateProductState = { error: null };
 
-export function UpdateProductForm({
-  product,
-  images,
-}: {
-  product: Product;
-  images: ProductImage[];
-}) {
+export function UpdateProductForm({ product }: { product: Product }) {
   const boundAction = updateProduct.bind(null, product.id);
   const [state, formAction, isPending] = useActionState(boundAction, INITIAL_STATE);
 
@@ -27,7 +21,7 @@ export function UpdateProductForm({
     <div className="flex flex-col gap-6">
       <Card className="flex flex-col gap-4">
         <h2 className="text-title-2 font-bold text-grey-900">이미지</h2>
-        <ProductGallery images={images} productName={product.name} productId={product.id} />
+        <ProductGallery imageUrl={product.image_url} productName={product.name} productId={product.id} />
       </Card>
 
       <form action={formAction} className="flex flex-col gap-6">

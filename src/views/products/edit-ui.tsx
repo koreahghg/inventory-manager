@@ -2,17 +2,11 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { Alert } from "@/shared/ui/Alert";
 import { safely } from "@/shared/lib/safe";
-import { getProduct, getProductImages } from "@/entities/product/api";
+import { getProduct } from "@/entities/product/api";
 import { UpdateProductForm } from "@/features/product/update-product/ui";
 
 export async function EditProductPage({ productId }: { productId: string }) {
-  const result = await safely(async () => {
-    const [product, images] = await Promise.all([
-      getProduct(productId),
-      getProductImages(productId),
-    ]);
-    return { product, images };
-  });
+  const result = await safely(() => getProduct(productId));
 
   if (!result.ok) {
     return (
@@ -23,13 +17,13 @@ export async function EditProductPage({ productId }: { productId: string }) {
     );
   }
 
-  const { product, images } = result.data;
+  const product = result.data;
   if (!product) notFound();
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <PageHeader title="상품 정보 수정" description={product.name} />
-      <UpdateProductForm product={product} images={images} />
+      <UpdateProductForm product={product} />
     </div>
   );
 }

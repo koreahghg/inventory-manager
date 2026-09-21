@@ -8,7 +8,7 @@ import { TableSkeleton } from "@/shared/ui/Skeleton";
 import { formatCurrency, formatQuantity } from "@/shared/lib/format";
 import { daysSince, isStaleInventory } from "@/shared/lib/stale";
 import { safely } from "@/shared/lib/safe";
-import { getProduct, getProductImages, getProductStock } from "@/entities/product/api";
+import { getProduct, getProductStock } from "@/entities/product/api";
 import { ProductGallery } from "@/widgets/product-gallery/ui";
 import { PurchaseHistory, preload as preloadPurchaseHistory } from "@/widgets/purchase-history/ui";
 import { SaleHistory, preload as preloadSaleHistory } from "@/widgets/sale-history/ui";
@@ -33,13 +33,7 @@ export async function ProductDetailPage({ productId }: { productId: string }) {
   const product = productResult.data;
   if (!product) notFound();
 
-  const result = await safely(async () => {
-    const [images, stock] = await Promise.all([
-      getProductImages(productId),
-      getProductStock(productId),
-    ]);
-    return { images, stock };
-  });
+  const result = await safely(() => getProductStock(productId));
 
   if (!result.ok) {
     return (
@@ -50,7 +44,7 @@ export async function ProductDetailPage({ productId }: { productId: string }) {
     );
   }
 
-  const { images, stock } = result.data;
+  const stock = result.data;
   const stale = isStaleInventory(stock.oldest_available_purchase_date);
 
   return (
@@ -74,7 +68,7 @@ export async function ProductDetailPage({ productId }: { productId: string }) {
 
       <Card>
         <h2 className="mb-3 text-title-2 font-bold text-grey-900">이미지</h2>
-        <ProductGallery images={images} productName={product.name} productId={productId} />
+        <ProductGallery imageUrl={product.image_url} productName={product.name} productId={productId} />
       </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -6,16 +6,9 @@ export type Product = {
   size: string | null;
   color: string | null;
   memo: string | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
-};
-
-export type ProductImage = {
-  id: string;
-  product_id: string;
-  url: string;
-  is_primary: boolean;
-  sort_order: number;
 };
 
 export type ProductStock = {

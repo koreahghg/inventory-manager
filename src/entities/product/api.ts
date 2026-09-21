@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/shared/lib/supabase/server";
-import type { Product, ProductImage, ProductStock } from "./model";
+import type { Product, ProductStock } from "./model";
 
 const EMPTY_STOCK = (product_id: string): ProductStock => ({
   product_id,
@@ -23,20 +23,6 @@ export const getProduct = cache(async function getProduct(
 
   if (error) throw error;
   return data as Product | null;
-});
-
-export const getProductImages = cache(async function getProductImages(
-  id: string,
-): Promise<ProductImage[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("product_images")
-    .select("*")
-    .eq("product_id", id)
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as ProductImage[];
 });
 
 export const getProductStock = cache(async function getProductStock(

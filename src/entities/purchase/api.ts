@@ -54,28 +54,25 @@ export const listActiveStock = cache(async function listActiveStock(
   if (error) throw error;
 
   const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
-  const productById = new Map<string, { name: string; brand: string | null }>();
-  const imageByProductId = new Map<string, string>();
+  const productById = new Map<
+    string,
+    { name: string; brand: string | null; image_url: string | null }
+  >();
 
   if (productIds.length > 0) {
-    const [{ data: products, error: productsError }, { data: images, error: imagesError }] =
-      await Promise.all([
-        supabase.from("products").select("id, name, brand").in("id", productIds),
-        supabase
-          .from("product_images")
-          .select("product_id, url")
-          .eq("is_primary", true)
-          .in("product_id", productIds),
-      ]);
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, brand, image_url")
+      .in("id", productIds);
 
     if (productsError) throw productsError;
-    if (imagesError) throw imagesError;
 
     for (const product of products ?? []) {
-      productById.set(product.id, { name: product.name, brand: product.brand });
-    }
-    for (const image of images ?? []) {
-      imageByProductId.set(image.product_id, image.url);
+      productById.set(product.id, {
+        name: product.name,
+        brand: product.brand,
+        image_url: product.image_url,
+      });
     }
   }
 
@@ -99,7 +96,7 @@ export const listActiveStock = cache(async function listActiveStock(
       product_id: row.product_id,
       product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
       product_brand: productById.get(row.product_id)?.brand ?? null,
-      product_image_url: imageByProductId.get(row.product_id) ?? null,
+      product_image_url: productById.get(row.product_id)?.image_url ?? null,
       purchase_date: row.purchase_date,
       vendor: row.vendor,
       stock_status: row.stock_status as StockStatus,
@@ -184,28 +181,25 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
   if (error) throw error;
 
   const productIds = [...new Set((data ?? []).map((row) => row.product_id))];
-  const productById = new Map<string, { name: string; brand: string | null }>();
-  const imageByProductId = new Map<string, string>();
+  const productById = new Map<
+    string,
+    { name: string; brand: string | null; image_url: string | null }
+  >();
 
   if (productIds.length > 0) {
-    const [{ data: products, error: productsError }, { data: images, error: imagesError }] =
-      await Promise.all([
-        supabase.from("products").select("id, name, brand").in("id", productIds),
-        supabase
-          .from("product_images")
-          .select("product_id, url")
-          .eq("is_primary", true)
-          .in("product_id", productIds),
-      ]);
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, brand, image_url")
+      .in("id", productIds);
 
     if (productsError) throw productsError;
-    if (imagesError) throw imagesError;
 
     for (const product of products ?? []) {
-      productById.set(product.id, { name: product.name, brand: product.brand });
-    }
-    for (const image of images ?? []) {
-      imageByProductId.set(image.product_id, image.url);
+      productById.set(product.id, {
+        name: product.name,
+        brand: product.brand,
+        image_url: product.image_url,
+      });
     }
   }
 
@@ -214,6 +208,6 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
     stock_status: row.stock_status as StockStatus,
     product_name: productById.get(row.product_id)?.name ?? "알 수 없음",
     product_brand: productById.get(row.product_id)?.brand ?? null,
-    product_image_url: imageByProductId.get(row.product_id) ?? null,
+    product_image_url: productById.get(row.product_id)?.image_url ?? null,
   }));
 });

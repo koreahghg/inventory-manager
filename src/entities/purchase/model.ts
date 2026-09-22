@@ -61,3 +61,11 @@ export type AvailablePurchaseBatch = {
   unit_price: number;
   remaining_quantity: number;
 };
+
+/** 온라인 재고 엑셀 내보내기용 — 상품별로 합산한 수량 한 줄. */
+export type OnlineStockItem = {
+  product_id: string;
+  product_name: string;
+  product_brand: string | null;
+  quantity: number;
+};

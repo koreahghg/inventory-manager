@@ -5,6 +5,7 @@ import { paginate, rangeFor, type Paginated } from "@/shared/lib/pagination";
 import type {
   ActivePurchase,
   AvailablePurchaseBatch,
+  OnlineStockItem,
   Purchase,
   StockGroup,
   StockStatus,
@@ -212,4 +213,53 @@ export const listStockBoard = cache(async function listStockBoard(): Promise<
     product_image_url: productById.get(row.product_id)?.image_url ?? null,
     product_memo: productById.get(row.product_id)?.memo ?? null,
   }));
+});
+
+/** 온라인 재고 엑셀 내보내기용 — 상품별로 잔여 수량을 합산한 한 줄씩,
+ * 매입 배치(매입일·단가·매입처)는 구분하지 않는다. */
+export const listOnlineStock = cache(async function listOnlineStock(): Promise<
+  OnlineStockItem[]
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("v_purchase_stock")
+    .select("product_id, remaining_quantity")
+    .eq("stock_status", "online")
+    .gt("remaining_quantity", 0);
+
+  if (error) throw error;
+
+  const quantityByProduct = new Map<string, number>();
+  for (const row of data ?? []) {
+    quantityByProduct.set(
+      row.product_id,
+      (quantityByProduct.get(row.product_id) ?? 0) + row.remaining_quantity,
+    );
+  }
+
+  const productIds = [...quantityByProduct.keys()];
+  const productById = new Map<string, { name: string; brand: string | null }>();
+
+  if (productIds.length > 0) {
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, brand")
+      .in("id", productIds);
+
+    if (productsError) throw productsError;
+
+    for (const product of products ?? []) {
+      productById.set(product.id, { name: product.name, brand: product.brand });
+    }
+  }
+
+  return productIds
+    .map((productId) => ({
+      product_id: productId,
+      product_name: productById.get(productId)?.name ?? "알 수 없음",
+      product_brand: productById.get(productId)?.brand ?? null,
+      quantity: quantityByProduct.get(productId)!,
+    }))
+    .sort((a, b) => a.product_name.localeCompare(b.product_name, "ko"));
 });
